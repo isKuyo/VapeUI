@@ -22,11 +22,11 @@ local Theme = {
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = 0.5, -- 50% opacity
     SubText = Color3.fromRGB(150, 150, 150),
-    Accent = Color3.fromRGB(121, 175, 225), -- #79AFE1
-    AccentHover = Color3.fromRGB(140, 190, 235),
+    Accent = Color3.fromRGB(5, 133, 104), -- #058568
+    AccentHover = Color3.fromRGB(10, 155, 120),
     ModuleBackground = Color3.fromRGB(35, 34, 35),
     ModuleStroke = Color3.fromRGB(45, 44, 45),
-    ToggleEnabled = Color3.fromRGB(121, 175, 225), -- #79AFE1
+    ToggleEnabled = Color3.fromRGB(5, 133, 104), -- #058568
     ToggleDisabled = Color3.fromRGB(60, 60, 60)
 }
 
@@ -627,41 +627,13 @@ function Wisper:CreateWindow(Config)
         local function ToggleSubMenuCollapse()
             SubMenuCollapsed = not SubMenuCollapsed
             if SubMenuCollapsed then
-                -- Collapse: animate modules up and hide, rotate arrow 180
+                -- Collapse: hide modules immediately, rotate arrow 180
                 Tween(SubMenuArrowButton, {Rotation = 180}, 0.2)
-                -- Animate each module up
-                for _, child in ipairs(ModulesContainer:GetChildren()) do
-                    if child:IsA("Frame") then
-                        Tween(child, {Position = child.Position - UDim2.new(0, 0, 0, 15)}, 0.15)
-                    end
-                end
-                task.delay(0.15, function()
-                    if SubMenuCollapsed then
-                        ModulesContainer.Visible = false
-                        -- Reset positions
-                        for _, child in ipairs(ModulesContainer:GetChildren()) do
-                            if child:IsA("Frame") then
-                                child.Position = child.Position + UDim2.new(0, 0, 0, 15)
-                            end
-                        end
-                        UpdateThisShadow()
-                    end
-                end)
+                ModulesContainer.Visible = false
             else
-                -- Expand: show modules, animate down, rotate arrow back to 0
+                -- Expand: show modules, rotate arrow back to 0
                 Tween(SubMenuArrowButton, {Rotation = 0}, 0.2)
                 ModulesContainer.Visible = true
-                -- Animate each module appearing
-                for _, child in ipairs(ModulesContainer:GetChildren()) do
-                    if child:IsA("Frame") then
-                        local originalPos = child.Position
-                        child.Position = originalPos - UDim2.new(0, 0, 0, 15)
-                        Tween(child, {Position = originalPos}, 0.2)
-                    end
-                end
-                task.delay(0.05, function()
-                    UpdateThisShadow()
-                end)
             end
         end
 
@@ -795,7 +767,7 @@ function Wisper:CreateWindow(Config)
             local ModuleHeader = Create("Frame", {
                 Name = "Header",
                 Parent = ModuleFrame,
-                BackgroundColor3 = Enabled and Theme.Accent or Color3.fromRGB(255, 255, 255),
+                BackgroundColor3 = Enabled and Theme.Accent or Theme.CategoryBgTop,
                 Size = UDim2.new(1, 0, 0, 28),
                 LayoutOrder = 0,
                 ZIndex = 6
@@ -898,44 +870,16 @@ function Wisper:CreateWindow(Config)
                     Tween(SettingsButton, {ImageTransparency = 0.3}, 0.15)
                 else
                     ModuleHeaderGradient.Enabled = true
-                    Tween(ModuleHeader, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15)
+                    Tween(ModuleHeader, {BackgroundColor3 = Theme.CategoryBgTop}, 0.15)
                     Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.15)
                     Tween(SettingsButton, {ImageTransparency = 0.5}, 0.15)
                 end
             end
 
-            -- Function to toggle expand with animation
+            -- Function to toggle expand (simple, no delay)
             local function ToggleExpand()
                 Expanded = not Expanded
-                if Expanded then
-                    OptionsContainer.Visible = true
-                    -- Animate items appearing
-                    for _, child in ipairs(OptionsContainer:GetChildren()) do
-                        if child:IsA("Frame") then
-                            child.Position = child.Position - UDim2.new(0, 0, 0, 10)
-                            child.BackgroundTransparency = 1
-                            Tween(child, {Position = child.Position + UDim2.new(0, 0, 0, 10), BackgroundTransparency = 0}, 0.2)
-                        end
-                    end
-                else
-                    -- Animate items disappearing
-                    for _, child in ipairs(OptionsContainer:GetChildren()) do
-                        if child:IsA("Frame") then
-                            Tween(child, {Position = child.Position - UDim2.new(0, 0, 0, 10)}, 0.15)
-                        end
-                    end
-                    task.delay(0.15, function()
-                        if not Expanded then
-                            OptionsContainer.Visible = false
-                            -- Reset positions
-                            for _, child in ipairs(OptionsContainer:GetChildren()) do
-                                if child:IsA("Frame") then
-                                    child.Position = child.Position + UDim2.new(0, 0, 0, 10)
-                                end
-                            end
-                        end
-                    end)
-                end
+                OptionsContainer.Visible = Expanded
             end
 
             -- Hover effect
