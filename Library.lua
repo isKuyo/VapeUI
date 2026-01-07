@@ -211,8 +211,8 @@ function Wisper:CreateWindow(Config)
         Name = "GameNameLabel",
         Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 55, 0, 0),
-        Size = UDim2.new(1, -85, 1, 0),
+        Position = UDim2.new(0, 65, 0, 0),
+        Size = UDim2.new(1, -95, 1, 0),
         Font = Enum.Font.Gotham,
         Text = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
         TextColor3 = Theme.Text,
@@ -687,56 +687,96 @@ function Wisper:CreateWindow(Config)
 
         local Category = {}
 
-        function Category:AddToggle(ToggleConfig)
-            ToggleConfig = ToggleConfig or {}
-            ToggleConfig.Name = ToggleConfig.Name or "Toggle"
-            ToggleConfig.Default = ToggleConfig.Default or false
-            ToggleConfig.Callback = ToggleConfig.Callback or function() end
+        -- AddModule creates an expandable module (like Kill Aura, Speed, etc.)
+        -- Left click toggles the module on/off
+        -- Right click expands to show settings (toggles, sliders, etc.)
+        function Category:AddModule(ModuleConfig)
+            ModuleConfig = ModuleConfig or {}
+            ModuleConfig.Name = ModuleConfig.Name or "Module"
+            ModuleConfig.Default = ModuleConfig.Default or false
+            ModuleConfig.Callback = ModuleConfig.Callback or function() end
 
-            local Enabled = ToggleConfig.Default
+            local Enabled = ModuleConfig.Default
+            local Expanded = false
+            local ModuleIndex = #CategoryData.Modules + 1
 
-            local ToggleFrame = Create("Frame", {
-                Name = "Toggle_" .. ToggleConfig.Name,
+            -- Main module frame (header + expandable content)
+            local ModuleFrame = Create("Frame", {
+                Name = "Module_" .. ModuleConfig.Name,
                 Parent = ModulesContainer,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 28),
-                LayoutOrder = #CategoryData.Modules + 1,
+                AutomaticSize = Enum.AutomaticSize.Y,
+                LayoutOrder = ModuleIndex,
+                ClipsDescendants = false,
                 ZIndex = 6
             })
 
-            local ToggleLabel = Create("TextLabel", {
+            local ModuleLayout = Create("UIListLayout", {
+                Parent = ModuleFrame,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 0)
+            })
+
+            -- Module header (the clickable row)
+            local ModuleHeader = Create("Frame", {
+                Name = "Header",
+                Parent = ModuleFrame,
+                BackgroundColor3 = Enabled and Theme.Accent or Color3.fromRGB(255, 255, 255),
+                Size = UDim2.new(1, 0, 0, 28),
+                LayoutOrder = 0,
+                ZIndex = 6
+            })
+
+            local ModuleHeaderCorner = Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = ModuleHeader
+            })
+
+            -- Gradient for inactive state
+            local ModuleHeaderGradient = Create("UIGradient", {
+                Parent = ModuleHeader,
+                Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Theme.CategoryBgTop),
+                    ColorSequenceKeypoint.new(1, Theme.CategoryBgBottom)
+                }),
+                Rotation = 90
+            })
+            ModuleHeaderGradient.Enabled = not Enabled
+
+            local ModuleLabel = Create("TextLabel", {
                 Name = "Label",
-                Parent = ToggleFrame,
+                Parent = ModuleHeader,
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0, 10, 0, 0),
                 Size = UDim2.new(1, -50, 1, 0),
                 Font = Enum.Font.Gotham,
-                Text = ToggleConfig.Name,
+                Text = ModuleConfig.Name,
                 TextColor3 = Theme.Text,
-                TextTransparency = Theme.TextDim,
+                TextTransparency = Enabled and 0 or Theme.TextDim,
                 TextSize = 12,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 ZIndex = 7
             })
 
             -- Indicator bar on the right
-            local ToggleIndicator = Create("Frame", {
+            local ModuleIndicator = Create("Frame", {
                 Name = "Indicator",
-                Parent = ToggleFrame,
+                Parent = ModuleHeader,
                 BackgroundColor3 = Enabled and Theme.Accent or Theme.ModuleStroke,
-                Position = UDim2.new(1, -40, 0.5, -4),
-                Size = UDim2.new(0, 32, 0, 8),
+                Position = UDim2.new(1, -38, 0.5, -4),
+                Size = UDim2.new(0, 28, 0, 8),
                 ZIndex = 7
             })
 
-            local ToggleIndicatorCorner = Create("UICorner", {
+            local ModuleIndicatorCorner = Create("UICorner", {
                 CornerRadius = UDim.new(0, 2),
-                Parent = ToggleIndicator
+                Parent = ModuleIndicator
             })
 
-            local ToggleClickArea = Create("TextButton", {
+            local ModuleClickArea = Create("TextButton", {
                 Name = "ClickArea",
-                Parent = ToggleFrame,
+                Parent = ModuleHeader,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0),
                 Text = "",
@@ -744,48 +784,319 @@ function Wisper:CreateWindow(Config)
                 ZIndex = 8
             })
 
-            local function UpdateToggle()
+            -- Expandable options container (hidden by default)
+            local OptionsContainer = Create("Frame", {
+                Name = "Options",
+                Parent = ModuleFrame,
+                BackgroundColor3 = Theme.CategoryBgBottom,
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                LayoutOrder = 1,
+                Visible = false,
+                ClipsDescendants = true,
+                ZIndex = 6
+            })
+
+            local OptionsCorner = Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = OptionsContainer
+            })
+
+            local OptionsPadding = Create("UIPadding", {
+                Parent = OptionsContainer,
+                PaddingTop = UDim.new(0, 6),
+                PaddingBottom = UDim.new(0, 6),
+                PaddingLeft = UDim.new(0, 10),
+                PaddingRight = UDim.new(0, 10)
+            })
+
+            local OptionsLayout = Create("UIListLayout", {
+                Parent = OptionsContainer,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 4)
+            })
+
+            local function UpdateModuleVisual()
                 if Enabled then
-                    Tween(ToggleIndicator, {BackgroundColor3 = Theme.Accent}, 0.15)
-                    Tween(ToggleLabel, {TextTransparency = 0}, 0.15)
+                    ModuleHeaderGradient.Enabled = false
+                    Tween(ModuleHeader, {BackgroundColor3 = Theme.Accent}, 0.15)
+                    Tween(ModuleLabel, {TextTransparency = 0}, 0.15)
+                    Tween(ModuleIndicator, {BackgroundColor3 = Theme.Accent}, 0.15)
                 else
-                    Tween(ToggleIndicator, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
-                    Tween(ToggleLabel, {TextTransparency = Theme.TextDim}, 0.15)
+                    ModuleHeaderGradient.Enabled = true
+                    Tween(ModuleHeader, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15)
+                    Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.15)
+                    Tween(ModuleIndicator, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
                 end
             end
 
             -- Hover effect
-            ToggleClickArea.MouseEnter:Connect(function()
+            ModuleClickArea.MouseEnter:Connect(function()
                 if not Enabled then
-                    Tween(ToggleLabel, {TextTransparency = 0.3}, 0.1)
+                    Tween(ModuleLabel, {TextTransparency = 0.3}, 0.1)
                 end
             end)
 
-            ToggleClickArea.MouseLeave:Connect(function()
+            ModuleClickArea.MouseLeave:Connect(function()
                 if not Enabled then
-                    Tween(ToggleLabel, {TextTransparency = Theme.TextDim}, 0.1)
+                    Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.1)
                 end
             end)
 
-            ToggleClickArea.MouseButton1Click:Connect(function()
+            -- Left click: toggle module on/off
+            ModuleClickArea.MouseButton1Click:Connect(function()
                 Enabled = not Enabled
-                UpdateToggle()
-                ToggleConfig.Callback(Enabled)
+                UpdateModuleVisual()
+                ModuleConfig.Callback(Enabled)
             end)
 
-            local ToggleAPI = {
+            -- Right click: expand/collapse options
+            ModuleClickArea.MouseButton2Click:Connect(function()
+                Expanded = not Expanded
+                OptionsContainer.Visible = Expanded
+            end)
+
+            -- Module API with methods to add options
+            local ModuleAPI = {
                 Set = function(self, Value)
                     Enabled = Value
-                    UpdateToggle()
-                    ToggleConfig.Callback(Enabled)
+                    UpdateModuleVisual()
+                    ModuleConfig.Callback(Enabled)
                 end,
                 Get = function(self)
                     return Enabled
-                end
+                end,
+                Options = {}
             }
 
-            table.insert(CategoryData.Modules, ToggleAPI)
-            return ToggleAPI
+            -- Add Toggle option inside module
+            function ModuleAPI:AddToggle(ToggleConfig)
+                ToggleConfig = ToggleConfig or {}
+                ToggleConfig.Name = ToggleConfig.Name or "Option"
+                ToggleConfig.Default = ToggleConfig.Default or false
+                ToggleConfig.Callback = ToggleConfig.Callback or function() end
+
+                local OptionEnabled = ToggleConfig.Default
+
+                local OptionFrame = Create("Frame", {
+                    Name = "Option_" .. ToggleConfig.Name,
+                    Parent = OptionsContainer,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 0, 22),
+                    LayoutOrder = #ModuleAPI.Options + 1,
+                    ZIndex = 6
+                })
+
+                local OptionLabel = Create("TextLabel", {
+                    Name = "Label",
+                    Parent = OptionFrame,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 0, 0, 0),
+                    Size = UDim2.new(1, -40, 1, 0),
+                    Font = Enum.Font.Gotham,
+                    Text = ToggleConfig.Name,
+                    TextColor3 = Theme.Text,
+                    TextTransparency = OptionEnabled and 0.2 or 0.5,
+                    TextSize = 11,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    ZIndex = 7
+                })
+
+                local OptionIndicator = Create("Frame", {
+                    Name = "Indicator",
+                    Parent = OptionFrame,
+                    BackgroundColor3 = OptionEnabled and Theme.Accent or Theme.ModuleStroke,
+                    Position = UDim2.new(1, -30, 0.5, -3),
+                    Size = UDim2.new(0, 22, 0, 6),
+                    ZIndex = 7
+                })
+
+                local OptionIndicatorCorner = Create("UICorner", {
+                    CornerRadius = UDim.new(0, 2),
+                    Parent = OptionIndicator
+                })
+
+                local OptionClickArea = Create("TextButton", {
+                    Name = "ClickArea",
+                    Parent = OptionFrame,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Text = "",
+                    AutoButtonColor = false,
+                    ZIndex = 8
+                })
+
+                local function UpdateOption()
+                    if OptionEnabled then
+                        Tween(OptionIndicator, {BackgroundColor3 = Theme.Accent}, 0.15)
+                        Tween(OptionLabel, {TextTransparency = 0.2}, 0.15)
+                    else
+                        Tween(OptionIndicator, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
+                        Tween(OptionLabel, {TextTransparency = 0.5}, 0.15)
+                    end
+                end
+
+                OptionClickArea.MouseButton1Click:Connect(function()
+                    OptionEnabled = not OptionEnabled
+                    UpdateOption()
+                    ToggleConfig.Callback(OptionEnabled)
+                end)
+
+                local OptionAPI = {
+                    Set = function(self, Value)
+                        OptionEnabled = Value
+                        UpdateOption()
+                        ToggleConfig.Callback(OptionEnabled)
+                    end,
+                    Get = function(self)
+                        return OptionEnabled
+                    end
+                }
+
+                table.insert(ModuleAPI.Options, OptionAPI)
+                return OptionAPI
+            end
+
+            -- Add Slider option inside module
+            function ModuleAPI:AddSlider(SliderConfig)
+                SliderConfig = SliderConfig or {}
+                SliderConfig.Name = SliderConfig.Name or "Slider"
+                SliderConfig.Min = SliderConfig.Min or 0
+                SliderConfig.Max = SliderConfig.Max or 100
+                SliderConfig.Default = SliderConfig.Default or SliderConfig.Min
+                SliderConfig.Callback = SliderConfig.Callback or function() end
+
+                local SliderValue = SliderConfig.Default
+
+                local SliderFrame = Create("Frame", {
+                    Name = "Slider_" .. SliderConfig.Name,
+                    Parent = OptionsContainer,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 0, 32),
+                    LayoutOrder = #ModuleAPI.Options + 1,
+                    ZIndex = 6
+                })
+
+                local SliderLabel = Create("TextLabel", {
+                    Name = "Label",
+                    Parent = SliderFrame,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 0, 0, 0),
+                    Size = UDim2.new(0.6, 0, 0, 16),
+                    Font = Enum.Font.Gotham,
+                    Text = SliderConfig.Name,
+                    TextColor3 = Theme.Text,
+                    TextTransparency = 0.3,
+                    TextSize = 11,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    ZIndex = 7
+                })
+
+                local SliderValueLabel = Create("TextLabel", {
+                    Name = "Value",
+                    Parent = SliderFrame,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0.6, 0, 0, 0),
+                    Size = UDim2.new(0.4, 0, 0, 16),
+                    Font = Enum.Font.Gotham,
+                    Text = tostring(SliderValue),
+                    TextColor3 = Theme.Accent,
+                    TextSize = 11,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    ZIndex = 7
+                })
+
+                local SliderBar = Create("Frame", {
+                    Name = "Bar",
+                    Parent = SliderFrame,
+                    BackgroundColor3 = Theme.ModuleStroke,
+                    Position = UDim2.new(0, 0, 0, 20),
+                    Size = UDim2.new(1, 0, 0, 6),
+                    ZIndex = 7
+                })
+
+                local SliderBarCorner = Create("UICorner", {
+                    CornerRadius = UDim.new(0, 3),
+                    Parent = SliderBar
+                })
+
+                local SliderFill = Create("Frame", {
+                    Name = "Fill",
+                    Parent = SliderBar,
+                    BackgroundColor3 = Theme.Accent,
+                    Size = UDim2.new((SliderValue - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min), 0, 1, 0),
+                    ZIndex = 8
+                })
+
+                local SliderFillCorner = Create("UICorner", {
+                    CornerRadius = UDim.new(0, 3),
+                    Parent = SliderFill
+                })
+
+                local SliderClickArea = Create("TextButton", {
+                    Name = "ClickArea",
+                    Parent = SliderBar,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 1, 10),
+                    Position = UDim2.new(0, 0, 0, -5),
+                    Text = "",
+                    AutoButtonColor = false,
+                    ZIndex = 9
+                })
+
+                local Dragging = false
+
+                local function UpdateSlider(input)
+                    local barPos = SliderBar.AbsolutePosition.X
+                    local barSize = SliderBar.AbsoluteSize.X
+                    local mouseX = input.Position.X
+                    local percent = math.clamp((mouseX - barPos) / barSize, 0, 1)
+                    SliderValue = math.floor(SliderConfig.Min + (SliderConfig.Max - SliderConfig.Min) * percent)
+                    SliderValueLabel.Text = tostring(SliderValue)
+                    SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                    SliderConfig.Callback(SliderValue)
+                end
+
+                SliderClickArea.MouseButton1Down:Connect(function()
+                    Dragging = true
+                end)
+
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        Dragging = false
+                    end
+                end)
+
+                UserInputService.InputChanged:Connect(function(input)
+                    if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        UpdateSlider(input)
+                    end
+                end)
+
+                SliderClickArea.MouseButton1Click:Connect(function()
+                    local mouse = Players.LocalPlayer:GetMouse()
+                    UpdateSlider({Position = Vector3.new(mouse.X, mouse.Y, 0)})
+                end)
+
+                local SliderAPI = {
+                    Set = function(self, Value)
+                        SliderValue = math.clamp(Value, SliderConfig.Min, SliderConfig.Max)
+                        local percent = (SliderValue - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min)
+                        SliderValueLabel.Text = tostring(SliderValue)
+                        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                        SliderConfig.Callback(SliderValue)
+                    end,
+                    Get = function(self)
+                        return SliderValue
+                    end
+                }
+
+                table.insert(ModuleAPI.Options, SliderAPI)
+                return SliderAPI
+            end
+
+            table.insert(CategoryData.Modules, ModuleAPI)
+            return ModuleAPI
         end
 
         function Category:AddButton(ButtonConfig)
