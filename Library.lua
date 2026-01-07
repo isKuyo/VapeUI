@@ -1,3 +1,4 @@
+print("rw")
 local mainapi = {
 	Categories = {},
 	GUIColor = {
