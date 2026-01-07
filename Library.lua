@@ -6934,4 +6934,5 @@ mainapi:Clean(inputService.InputEnded:Connect(function(inputObj)
 	end
 end))
 
+mainapi.Loaded = true
 return mainapi
