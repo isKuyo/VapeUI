@@ -1,3 +1,4 @@
+print("b")
 local mainapi = {
 	Categories = {},
 	GUIColor = {
@@ -306,31 +307,6 @@ local function createMobileButton(buttonapi, position)
 		buttonapi:Toggle()
 		button.BackgroundColor3 = buttonapi.Enabled and Color3.new(0, 0.7, 0) or Color3.new()
 	end)
-
-	buttonapi.Bind = {Button = button}
-end
-
-local function downloadFile(path, func)
-	if not isfile(path) then
-		createDownloader(path)
-		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/isKuyo/VapeUI/main/'..select(1, path:gsub('newvape/', '')), true)
-		end)
-		if not suc or res == '404: Not Found' then
-			error(res)
-		end
-		if path:find('.lua') then
-			res = '--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.\n'..res
-		end
-		writefile(path, res)
-	end
-	return (func or readfile)(path)
-end
-
-getcustomasset = not inputService.TouchEnabled and assetfunction and function(path)
-	return downloadFile(path, assetfunction)
-end or function(path)
-	return getcustomassets[path] or ''
 end
 
 local function getTableSize(tab)
