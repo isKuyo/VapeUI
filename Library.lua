@@ -1765,6 +1765,8 @@ function Wisper:CreateWindow(Config)
             end
             
             -- Keybind button click handler
+            local JustSetKeybind = false
+            
             KeybindButton.MouseButton1Click:Connect(function()
                 if IsListeningForKeybind then return end
                 IsListeningForKeybind = true
@@ -1784,6 +1786,10 @@ function Wisper:CreateWindow(Config)
                             CurrentKeybind = input.KeyCode
                             KeybindButton.Text = input.KeyCode.Name
                             KeybindButton.Visible = true
+                            JustSetKeybind = true
+                            task.delay(0.1, function()
+                                JustSetKeybind = false
+                            end)
                         end
                     end
                 end)
@@ -1793,6 +1799,7 @@ function Wisper:CreateWindow(Config)
             UserInputService.InputBegan:Connect(function(input, gameProcessed)
                 if gameProcessed then return end
                 if IsListeningForKeybind then return end
+                if JustSetKeybind then return end
                 if CurrentKeybind and input.KeyCode == CurrentKeybind then
                     Enabled = not Enabled
                     UpdateModuleVisual()
