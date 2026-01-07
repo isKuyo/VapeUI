@@ -1,5 +1,4 @@
-print("b")
-local VapeStyle = {}
+local Wisper = {}
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -9,9 +8,9 @@ local CoreGui = game:GetService("CoreGui")
 
 local Player = Players.LocalPlayer
 
-if _G.VapeStyleInstance then
-    _G.VapeStyleInstance:Destroy()
-    _G.VapeStyleInstance = nil
+if _G.WisperInstance then
+    _G.WisperInstance:Destroy()
+    _G.WisperInstance = nil
 end
 
 local Theme = {
@@ -85,9 +84,9 @@ local function MakeDraggable(Frame, DragFrame)
     end)
 end
 
-local ScreenGuiName = "VapeStyle_" .. tostring(math.random(100000, 999999))
+local ScreenGuiName = "Wisper_" .. tostring(math.random(100000, 999999))
 
-function VapeStyle:CreateWindow(Config)
+function Wisper:CreateWindow(Config)
     Config = Config or {}
     Config.Name = Config.Name or "wisper"
     Config.GameName = Config.GameName or "Unknown Game"
@@ -102,7 +101,24 @@ function VapeStyle:CreateWindow(Config)
         DisplayOrder = 10
     })
 
-    _G.VapeStyleInstance = ScreenGui
+    _G.WisperInstance = ScreenGui
+
+    -- Drop Shadow for MainFrame (separate frame in ScreenGui)
+    local MainDropShadow = Create("ImageLabel", {
+        Name = "MainDropShadow",
+        Parent = ScreenGui,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 50 + 125, 0, 50),
+        Size = UDim2.new(0, 250 + 47, 0, 100),
+        ZIndex = 0,
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.5,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49, 49, 450, 450)
+    })
 
     -- Main Frame
     local MainFrame = Create("Frame", {
@@ -113,36 +129,23 @@ function VapeStyle:CreateWindow(Config)
         Position = UDim2.new(0, 50, 0, 50),
         Size = UDim2.new(0, 250, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
-        ClipsDescendants = false,
+        ClipsDescendants = true,
         ZIndex = 5
     })
 
-    -- Drop Shadow for MainFrame
-    local MainDropShadowHolder = Create("Frame", {
-        Name = "DropShadowHolder",
-        Parent = MainFrame,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 0
-    })
+    -- Update shadow position/size to follow MainFrame
+    local function UpdateMainShadow()
+        local pos = MainFrame.AbsolutePosition
+        local size = MainFrame.AbsoluteSize
+        MainDropShadow.Position = UDim2.new(0, pos.X + size.X / 2, 0, pos.Y + size.Y / 2)
+        MainDropShadow.Size = UDim2.new(0, size.X + 47, 0, size.Y + 47)
+        MainDropShadow.Visible = MainFrame.Visible
+    end
 
-    local MainDropShadow = Create("ImageLabel", {
-        Name = "DropShadow",
-        Parent = MainDropShadowHolder,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1, 47, 1, 47),
-        ZIndex = 0,
-        Image = "rbxassetid://6014261993",
-        ImageColor3 = Color3.fromRGB(0, 0, 0),
-        ImageTransparency = 0.5,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(49, 49, 450, 450)
-    })
+    MainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdateMainShadow)
+    MainFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateMainShadow)
+    MainFrame:GetPropertyChangedSignal("Visible"):Connect(UpdateMainShadow)
+    RunService.RenderStepped:Connect(UpdateMainShadow)
 
     local MainCorner = Create("UICorner", {
         CornerRadius = UDim.new(0, 12),
@@ -242,6 +245,24 @@ function VapeStyle:CreateWindow(Config)
     local CurrentCategory = nil
     local SubMenuFrame = nil
 
+    -- Drop Shadow for SubMenuFrame (separate in ScreenGui)
+    local SubDropShadow = Create("ImageLabel", {
+        Name = "SubDropShadow",
+        Parent = ScreenGui,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 310 + 140, 0, 50),
+        Size = UDim2.new(0, 280 + 47, 0, 100),
+        ZIndex = 0,
+        Visible = false,
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.5,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49, 49, 450, 450)
+    })
+
     -- Sub Menu Frame (appears when clicking a category)
     SubMenuFrame = Create("Frame", {
         Name = "SubMenuFrame",
@@ -252,36 +273,23 @@ function VapeStyle:CreateWindow(Config)
         Size = UDim2.new(0, 280, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         Visible = false,
-        ClipsDescendants = false,
+        ClipsDescendants = true,
         ZIndex = 5
     })
 
-    -- Drop Shadow for SubMenuFrame
-    local SubDropShadowHolder = Create("Frame", {
-        Name = "DropShadowHolder",
-        Parent = SubMenuFrame,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 0
-    })
+    -- Update shadow position/size to follow SubMenuFrame
+    local function UpdateSubShadow()
+        local pos = SubMenuFrame.AbsolutePosition
+        local size = SubMenuFrame.AbsoluteSize
+        SubDropShadow.Position = UDim2.new(0, pos.X + size.X / 2, 0, pos.Y + size.Y / 2)
+        SubDropShadow.Size = UDim2.new(0, size.X + 47, 0, size.Y + 47)
+        SubDropShadow.Visible = SubMenuFrame.Visible
+    end
 
-    local SubDropShadow = Create("ImageLabel", {
-        Name = "DropShadow",
-        Parent = SubDropShadowHolder,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1, 47, 1, 47),
-        ZIndex = 0,
-        Image = "rbxassetid://6014261993",
-        ImageColor3 = Color3.fromRGB(0, 0, 0),
-        ImageTransparency = 0.5,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(49, 49, 450, 450)
-    })
+    SubMenuFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdateSubShadow)
+    SubMenuFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateSubShadow)
+    SubMenuFrame:GetPropertyChangedSignal("Visible"):Connect(UpdateSubShadow)
+    RunService.RenderStepped:Connect(UpdateSubShadow)
 
     local SubMenuCorner = Create("UICorner", {
         CornerRadius = UDim.new(0, 12),
@@ -762,10 +770,10 @@ function VapeStyle:CreateWindow(Config)
 
     function Window:Destroy()
         ScreenGui:Destroy()
-        _G.VapeStyleInstance = nil
+        _G.WisperInstance = nil
     end
 
     return Window
 end
 
-return VapeStyle
+return Wisper
