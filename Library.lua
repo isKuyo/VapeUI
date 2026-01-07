@@ -1243,6 +1243,8 @@ function Wisper:CreateWindow(Config)
         local iconImage = CategoryConfig.Icon
         if Icons[CategoryConfig.Icon] then
             iconImage = Icons[CategoryConfig.Icon]
+        elseif Icons["lucide-" .. CategoryConfig.Icon] then
+            iconImage = Icons["lucide-" .. CategoryConfig.Icon]
         end
         
         local CategoryIcon = Create("ImageLabel", {
@@ -1641,6 +1643,32 @@ function Wisper:CreateWindow(Config)
                 ZIndex = 7
             })
 
+            -- Keybind button (left of settings)
+            local CurrentKeybind = nil
+            local IsListeningForKeybind = false
+            
+            local KeybindButton = Create("TextButton", {
+                Name = "KeybindButton",
+                Parent = ModuleHeader,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 0.8,
+                Position = UDim2.new(1, -58, 0.5, -9),
+                Size = UDim2.new(0, 26, 0, 18),
+                Font = Enum.Font.Gotham,
+                Text = "None",
+                TextColor3 = Theme.Text,
+                TextSize = 10,
+                TextTransparency = 0.3,
+                AutoButtonColor = false,
+                Visible = false,
+                ZIndex = 9
+            })
+            
+            local KeybindCorner = Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = KeybindButton
+            })
+
             -- Settings icon button on the right
             local SettingsButton = Create("ImageButton", {
                 Name = "SettingsButton",
@@ -1718,27 +1746,85 @@ function Wisper:CreateWindow(Config)
                 Expanded = not Expanded
                 OptionsContainer.Visible = Expanded
             end
+            
+            -- Function to update keybind visibility
+            local function UpdateKeybindVisibility(isHovering)
+                if CurrentKeybind or IsListeningForKeybind then
+                    KeybindButton.Visible = true
+                else
+                    KeybindButton.Visible = isHovering
+                end
+            end
+            
+            -- Keybind button click handler
+            KeybindButton.MouseButton1Click:Connect(function()
+                if IsListeningForKeybind then return end
+                IsListeningForKeybind = true
+                KeybindButton.Text = "..."
+                
+                local connection
+                connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        connection:Disconnect()
+                        IsListeningForKeybind = false
+                        
+                        if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace then
+                            CurrentKeybind = nil
+                            KeybindButton.Text = "None"
+                            UpdateKeybindVisibility(false)
+                        else
+                            CurrentKeybind = input.KeyCode
+                            KeybindButton.Text = input.KeyCode.Name
+                            KeybindButton.Visible = true
+                        end
+                    end
+                end)
+            end)
+            
+            -- Global keybind listener for this module
+            UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                if gameProcessed then return end
+                if IsListeningForKeybind then return end
+                if CurrentKeybind and input.KeyCode == CurrentKeybind then
+                    Enabled = not Enabled
+                    UpdateModuleVisual()
+                    ModuleConfig.Callback(Enabled)
+                end
+            end)
 
             -- Hover effect
             ModuleClickArea.MouseEnter:Connect(function()
                 if not Enabled then
                     Tween(ModuleLabel, {TextTransparency = 0.3}, 0.1)
                 end
+                UpdateKeybindVisibility(true)
             end)
 
             ModuleClickArea.MouseLeave:Connect(function()
                 if not Enabled then
                     Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.1)
                 end
+                UpdateKeybindVisibility(false)
+            end)
+            
+            -- Keybind button hover
+            KeybindButton.MouseEnter:Connect(function()
+                UpdateKeybindVisibility(true)
+            end)
+            
+            KeybindButton.MouseLeave:Connect(function()
+                UpdateKeybindVisibility(false)
             end)
 
             -- Settings button hover
             SettingsButton.MouseEnter:Connect(function()
                 Tween(SettingsButton, {ImageTransparency = 0.2}, 0.1)
+                UpdateKeybindVisibility(true)
             end)
 
             SettingsButton.MouseLeave:Connect(function()
                 Tween(SettingsButton, {ImageTransparency = Enabled and 0.3 or 0.5}, 0.1)
+                UpdateKeybindVisibility(false)
             end)
 
             -- Left click: toggle module on/off
