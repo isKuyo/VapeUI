@@ -1,4 +1,4 @@
-print("c")
+print("a")
 local mainapi = {
 	Categories = {},
 	GUIColor = {
@@ -2843,7 +2843,7 @@ function mainapi:CreateGUI()
 		windowlist.Parent = childrentoggle
 		categoryapi.Object = window
 
-		function categoryapi:CreateToggle(togglesettings)
+		function optionapi:CreateToggle(togglesettings)
 			local toggleapi = {
 				Enabled = false,
 				Index = getTableSize(optionapi.Toggles)
