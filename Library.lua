@@ -554,19 +554,32 @@ function Wisper:CreateWindow(Config)
             ZIndex = 7
         })
 
-        -- Collapse arrow in header
-        local SubMenuArrow = Create("ImageLabel", {
-            Name = "Arrow",
+        -- Collapse arrow button in header
+        local SubMenuArrowButton = Create("ImageButton", {
+            Name = "ArrowButton",
             Parent = SubMenuHeader,
             BackgroundTransparency = 1,
-            Position = UDim2.new(1, -12, 0.5, -5),
-            Size = UDim2.new(0, 10, 0, 10),
+            Position = UDim2.new(1, -12, 0.5, -6),
+            Size = UDim2.new(0, 12, 0, 12),
             Image = "rbxassetid://3926305904",
-            ImageRectOffset = Vector2.new(364, 44),
+            ImageRectOffset = Vector2.new(44, 404),
             ImageRectSize = Vector2.new(36, 36),
             ImageColor3 = Theme.Text,
             ImageTransparency = 0.5,
-            ZIndex = 7
+            Rotation = 0,
+            ZIndex = 8
+        })
+
+        -- Click area for header title (to collapse/expand)
+        local SubMenuHeaderClickArea = Create("TextButton", {
+            Name = "HeaderClickArea",
+            Parent = SubMenuHeader,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(1, -20, 1, 0),
+            Text = "",
+            AutoButtonColor = false,
+            ZIndex = 8
         })
 
         -- Update shadow for this submenu
@@ -590,6 +603,7 @@ function Wisper:CreateWindow(Config)
             Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             LayoutOrder = 1,
+            ClipsDescendants = true,
             ZIndex = 6
         })
 
@@ -606,6 +620,37 @@ function Wisper:CreateWindow(Config)
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 2)
         })
+
+        -- Submenu collapse state
+        local SubMenuCollapsed = false
+
+        local function ToggleSubMenuCollapse()
+            SubMenuCollapsed = not SubMenuCollapsed
+            if SubMenuCollapsed then
+                -- Collapse: hide modules, rotate arrow 180
+                Tween(SubMenuArrowButton, {Rotation = 180}, 0.2)
+                ModulesContainer.Visible = false
+            else
+                -- Expand: show modules, rotate arrow back to 0
+                Tween(SubMenuArrowButton, {Rotation = 0}, 0.2)
+                ModulesContainer.Visible = true
+            end
+        end
+
+        -- Arrow button click
+        SubMenuArrowButton.MouseButton1Click:Connect(ToggleSubMenuCollapse)
+
+        -- Header right click
+        SubMenuHeaderClickArea.MouseButton2Click:Connect(ToggleSubMenuCollapse)
+
+        -- Arrow hover effect
+        SubMenuArrowButton.MouseEnter:Connect(function()
+            Tween(SubMenuArrowButton, {ImageTransparency = 0.2}, 0.1)
+        end)
+
+        SubMenuArrowButton.MouseLeave:Connect(function()
+            Tween(SubMenuArrowButton, {ImageTransparency = 0.5}, 0.1)
+        end)
 
         -- Function to update visual state
         local function UpdateVisualState(selected)
@@ -749,7 +794,7 @@ function Wisper:CreateWindow(Config)
                 Parent = ModuleHeader,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 10, 0, 0),
-                Size = UDim2.new(1, -50, 1, 0),
+                Size = UDim2.new(1, -40, 1, 0),
                 Font = Enum.Font.Gotham,
                 Text = ModuleConfig.Name,
                 TextColor3 = Theme.Text,
@@ -759,26 +804,27 @@ function Wisper:CreateWindow(Config)
                 ZIndex = 7
             })
 
-            -- Indicator bar on the right
-            local ModuleIndicator = Create("Frame", {
-                Name = "Indicator",
+            -- Settings icon button on the right
+            local SettingsButton = Create("ImageButton", {
+                Name = "SettingsButton",
                 Parent = ModuleHeader,
-                BackgroundColor3 = Enabled and Theme.Accent or Theme.ModuleStroke,
-                Position = UDim2.new(1, -38, 0.5, -4),
-                Size = UDim2.new(0, 28, 0, 8),
-                ZIndex = 7
-            })
-
-            local ModuleIndicatorCorner = Create("UICorner", {
-                CornerRadius = UDim.new(0, 2),
-                Parent = ModuleIndicator
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, -28, 0.5, -8),
+                Size = UDim2.new(0, 16, 0, 16),
+                Image = "rbxassetid://3926305904",
+                ImageRectOffset = Vector2.new(764, 764),
+                ImageRectSize = Vector2.new(36, 36),
+                ImageColor3 = Theme.Text,
+                ImageTransparency = 0.5,
+                ZIndex = 9
             })
 
             local ModuleClickArea = Create("TextButton", {
                 Name = "ClickArea",
                 Parent = ModuleHeader,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(1, -30, 1, 0),
                 Text = "",
                 AutoButtonColor = false,
                 ZIndex = 8
@@ -821,12 +867,31 @@ function Wisper:CreateWindow(Config)
                     ModuleHeaderGradient.Enabled = false
                     Tween(ModuleHeader, {BackgroundColor3 = Theme.Accent}, 0.15)
                     Tween(ModuleLabel, {TextTransparency = 0}, 0.15)
-                    Tween(ModuleIndicator, {BackgroundColor3 = Theme.Accent}, 0.15)
+                    Tween(SettingsButton, {ImageTransparency = 0.3}, 0.15)
                 else
                     ModuleHeaderGradient.Enabled = true
                     Tween(ModuleHeader, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15)
                     Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.15)
-                    Tween(ModuleIndicator, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
+                    Tween(SettingsButton, {ImageTransparency = 0.5}, 0.15)
+                end
+            end
+
+            -- Function to toggle expand with animation
+            local function ToggleExpand()
+                Expanded = not Expanded
+                if Expanded then
+                    OptionsContainer.Visible = true
+                    OptionsContainer.BackgroundTransparency = 1
+                    Tween(OptionsContainer, {BackgroundTransparency = 0}, 0.2)
+                    Tween(SettingsButton, {Rotation = 90}, 0.2)
+                else
+                    Tween(OptionsContainer, {BackgroundTransparency = 1}, 0.15)
+                    Tween(SettingsButton, {Rotation = 0}, 0.2)
+                    task.delay(0.15, function()
+                        if not Expanded then
+                            OptionsContainer.Visible = false
+                        end
+                    end)
                 end
             end
 
@@ -843,6 +908,15 @@ function Wisper:CreateWindow(Config)
                 end
             end)
 
+            -- Settings button hover
+            SettingsButton.MouseEnter:Connect(function()
+                Tween(SettingsButton, {ImageTransparency = 0.2}, 0.1)
+            end)
+
+            SettingsButton.MouseLeave:Connect(function()
+                Tween(SettingsButton, {ImageTransparency = Enabled and 0.3 or 0.5}, 0.1)
+            end)
+
             -- Left click: toggle module on/off
             ModuleClickArea.MouseButton1Click:Connect(function()
                 Enabled = not Enabled
@@ -850,10 +924,14 @@ function Wisper:CreateWindow(Config)
                 ModuleConfig.Callback(Enabled)
             end)
 
-            -- Right click: expand/collapse options
+            -- Right click on module: expand/collapse options
             ModuleClickArea.MouseButton2Click:Connect(function()
-                Expanded = not Expanded
-                OptionsContainer.Visible = Expanded
+                ToggleExpand()
+            end)
+
+            -- Settings button click: expand/collapse options
+            SettingsButton.MouseButton1Click:Connect(function()
+                ToggleExpand()
             end)
 
             -- Module API with methods to add options
@@ -882,7 +960,7 @@ function Wisper:CreateWindow(Config)
                     Name = "Option_" .. ToggleConfig.Name,
                     Parent = OptionsContainer,
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 22),
+                    Size = UDim2.new(1, 0, 0, 24),
                     LayoutOrder = #ModuleAPI.Options + 1,
                     ZIndex = 6
                 })
@@ -892,7 +970,7 @@ function Wisper:CreateWindow(Config)
                     Parent = OptionFrame,
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0, 0, 0, 0),
-                    Size = UDim2.new(1, -40, 1, 0),
+                    Size = UDim2.new(1, -45, 1, 0),
                     Font = Enum.Font.Gotham,
                     Text = ToggleConfig.Name,
                     TextColor3 = Theme.Text,
@@ -902,18 +980,34 @@ function Wisper:CreateWindow(Config)
                     ZIndex = 7
                 })
 
-                local OptionIndicator = Create("Frame", {
-                    Name = "Indicator",
+                -- Toggle switch background
+                local ToggleSwitch = Create("Frame", {
+                    Name = "Switch",
                     Parent = OptionFrame,
                     BackgroundColor3 = OptionEnabled and Theme.Accent or Theme.ModuleStroke,
-                    Position = UDim2.new(1, -30, 0.5, -3),
-                    Size = UDim2.new(0, 22, 0, 6),
+                    Position = UDim2.new(1, -36, 0.5, -7),
+                    Size = UDim2.new(0, 28, 0, 14),
                     ZIndex = 7
                 })
 
-                local OptionIndicatorCorner = Create("UICorner", {
-                    CornerRadius = UDim.new(0, 2),
-                    Parent = OptionIndicator
+                local ToggleSwitchCorner = Create("UICorner", {
+                    CornerRadius = UDim.new(1, 0),
+                    Parent = ToggleSwitch
+                })
+
+                -- Toggle circle (white ball)
+                local ToggleCircle = Create("Frame", {
+                    Name = "Circle",
+                    Parent = ToggleSwitch,
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    Position = OptionEnabled and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5),
+                    Size = UDim2.new(0, 10, 0, 10),
+                    ZIndex = 8
+                })
+
+                local ToggleCircleCorner = Create("UICorner", {
+                    CornerRadius = UDim.new(1, 0),
+                    Parent = ToggleCircle
                 })
 
                 local OptionClickArea = Create("TextButton", {
@@ -923,15 +1017,17 @@ function Wisper:CreateWindow(Config)
                     Size = UDim2.new(1, 0, 1, 0),
                     Text = "",
                     AutoButtonColor = false,
-                    ZIndex = 8
+                    ZIndex = 9
                 })
 
                 local function UpdateOption()
                     if OptionEnabled then
-                        Tween(OptionIndicator, {BackgroundColor3 = Theme.Accent}, 0.15)
+                        Tween(ToggleSwitch, {BackgroundColor3 = Theme.Accent}, 0.15)
+                        Tween(ToggleCircle, {Position = UDim2.new(1, -12, 0.5, -5)}, 0.15)
                         Tween(OptionLabel, {TextTransparency = 0.2}, 0.15)
                     else
-                        Tween(OptionIndicator, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
+                        Tween(ToggleSwitch, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
+                        Tween(ToggleCircle, {Position = UDim2.new(0, 2, 0.5, -5)}, 0.15)
                         Tween(OptionLabel, {TextTransparency = 0.5}, 0.15)
                     end
                 end
@@ -1033,15 +1129,31 @@ function Wisper:CreateWindow(Config)
                     Parent = SliderFill
                 })
 
+                -- White circle knob
+                local initialPercent = (SliderValue - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min)
+                local SliderKnob = Create("Frame", {
+                    Name = "Knob",
+                    Parent = SliderBar,
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    Position = UDim2.new(initialPercent, -6, 0.5, -6),
+                    Size = UDim2.new(0, 12, 0, 12),
+                    ZIndex = 9
+                })
+
+                local SliderKnobCorner = Create("UICorner", {
+                    CornerRadius = UDim.new(1, 0),
+                    Parent = SliderKnob
+                })
+
                 local SliderClickArea = Create("TextButton", {
                     Name = "ClickArea",
                     Parent = SliderBar,
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, 10),
-                    Position = UDim2.new(0, 0, 0, -5),
+                    Size = UDim2.new(1, 0, 1, 16),
+                    Position = UDim2.new(0, 0, 0, -8),
                     Text = "",
                     AutoButtonColor = false,
-                    ZIndex = 9
+                    ZIndex = 10
                 })
 
                 local Dragging = false
@@ -1054,6 +1166,7 @@ function Wisper:CreateWindow(Config)
                     SliderValue = math.floor(SliderConfig.Min + (SliderConfig.Max - SliderConfig.Min) * percent)
                     SliderValueLabel.Text = tostring(SliderValue)
                     SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                    SliderKnob.Position = UDim2.new(percent, -6, 0.5, -6)
                     SliderConfig.Callback(SliderValue)
                 end
 
@@ -1084,6 +1197,7 @@ function Wisper:CreateWindow(Config)
                         local percent = (SliderValue - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min)
                         SliderValueLabel.Text = tostring(SliderValue)
                         SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                        SliderKnob.Position = UDim2.new(percent, -6, 0.5, -6)
                         SliderConfig.Callback(SliderValue)
                     end,
                     Get = function(self)
