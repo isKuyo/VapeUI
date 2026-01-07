@@ -1,4 +1,4 @@
-print("b")
+print("c")
 local mainapi = {
 	Categories = {},
 	GUIColor = {
@@ -2828,6 +2828,19 @@ function mainapi:CreateGUI()
 		settingswindowlist.SortOrder = Enum.SortOrder.LayoutOrder
 		settingswindowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		settingswindowlist.Parent = settingschildren
+		local childrentoggle = Instance.new('ScrollingFrame')
+		childrentoggle.Name = 'ChildrenToggle'
+		childrentoggle.Size = UDim2.fromOffset(220, 200)
+		childrentoggle.Position = UDim2.fromOffset(0, 42)
+		childrentoggle.BackgroundTransparency = 1
+		childrentoggle.ScrollBarThickness = 2
+		childrentoggle.ScrollBarImageTransparency = 0.75
+		childrentoggle.CanvasSize = UDim2.new()
+		childrentoggle.Parent = window
+		local windowlist = Instance.new('UIListLayout')
+		windowlist.SortOrder = Enum.SortOrder.LayoutOrder
+		windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		windowlist.Parent = childrentoggle
 		categoryapi.Object = window
 
 		function categoryapi:CreateToggle(togglesettings)
