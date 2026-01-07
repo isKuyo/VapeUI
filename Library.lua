@@ -17,15 +17,16 @@ local Theme = {
     Background = Color3.fromRGB(26, 25, 26), -- #1A191A
     Header = Color3.fromRGB(20, 20, 20), -- #141414
     Line = Color3.fromRGB(31, 30, 31), -- #1F1E1F
-    CategoryBg = Color3.fromRGB(26, 25, 26), -- #1A191A
+    CategoryBgTop = Color3.fromRGB(31, 31, 36), -- #1F1F24
+    CategoryBgBottom = Color3.fromRGB(27, 27, 32), -- #1B1B20
     Text = Color3.fromRGB(255, 255, 255),
-    TextDim = 0.6, -- 60% opacity (0.6 transparency)
+    TextDim = 0.5, -- 50% opacity
     SubText = Color3.fromRGB(150, 150, 150),
-    Accent = Color3.fromRGB(6, 125, 98), -- #067D62
-    AccentHover = Color3.fromRGB(8, 145, 114),
+    Accent = Color3.fromRGB(121, 175, 225), -- #79AFE1
+    AccentHover = Color3.fromRGB(140, 190, 235),
     ModuleBackground = Color3.fromRGB(35, 34, 35),
     ModuleStroke = Color3.fromRGB(45, 44, 45),
-    ToggleEnabled = Color3.fromRGB(6, 125, 98),
+    ToggleEnabled = Color3.fromRGB(121, 175, 225), -- #79AFE1
     ToggleDisabled = Color3.fromRGB(60, 60, 60)
 }
 
@@ -262,7 +263,15 @@ function Wisper:CreateWindow(Config)
     local CategoriesLayout = Create("UIListLayout", {
         Parent = CategoriesContainer,
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 0)
+        Padding = UDim.new(0, 4)
+    })
+
+    local CategoriesPadding = Create("UIPadding", {
+        Parent = CategoriesContainer,
+        PaddingTop = UDim.new(0, 6),
+        PaddingBottom = UDim.new(0, 6),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8)
     })
 
     -- Footer (dark bar at bottom with placeholder text)
@@ -374,15 +383,30 @@ function Wisper:CreateWindow(Config)
 
         local CategoryIndex = #Categories + 1
 
-        -- Category Button (full width, no stroke, flat design)
+        -- Category Button with gradient background
         local CategoryButton = Create("Frame", {
             Name = "CategoryButton_" .. CategoryConfig.Name,
             Parent = CategoriesContainer,
-            BackgroundColor3 = Theme.CategoryBg,
+            BackgroundColor3 = Theme.CategoryBgTop,
             BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 0, 38),
+            Size = UDim2.new(1, 0, 0, 32),
             LayoutOrder = CategoryIndex,
             ZIndex = 6
+        })
+
+        local CategoryButtonCorner = Create("UICorner", {
+            CornerRadius = UDim.new(0, 6),
+            Parent = CategoryButton
+        })
+
+        -- Gradient for inactive state
+        local CategoryGradient = Create("UIGradient", {
+            Parent = CategoryButton,
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Theme.CategoryBgTop),
+                ColorSequenceKeypoint.new(1, Theme.CategoryBgBottom)
+            }),
+            Rotation = 90
         })
 
         -- Category Icon (left side)
@@ -390,8 +414,8 @@ function Wisper:CreateWindow(Config)
             Name = "Icon",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 15, 0.5, -10),
-            Size = UDim2.new(0, 20, 0, 20),
+            Position = UDim2.new(0, 12, 0.5, -8),
+            Size = UDim2.new(0, 16, 0, 16),
             Image = CategoryConfig.Icon,
             ImageRectOffset = CategoryConfig.IconRectOffset,
             ImageRectSize = CategoryConfig.IconRectSize,
@@ -405,9 +429,9 @@ function Wisper:CreateWindow(Config)
             Name = "Label",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 45, 0, 0),
-            Size = UDim2.new(1, -70, 1, 0),
-            Font = Enum.Font.GothamMedium,
+            Position = UDim2.new(0, 36, 0, 0),
+            Size = UDim2.new(1, -60, 1, 0),
+            Font = Enum.Font.Gotham,
             Text = CategoryConfig.Name,
             TextColor3 = Theme.Text,
             TextTransparency = Theme.TextDim,
@@ -416,13 +440,13 @@ function Wisper:CreateWindow(Config)
             ZIndex = 7
         })
 
-        -- Arrow Icon (right side) - chevron right
+        -- Arrow/Link Icon (right side)
         local ArrowIcon = Create("ImageLabel", {
             Name = "Arrow",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(1, -22, 0.5, -5),
-            Size = UDim2.new(0, 10, 0, 10),
+            Position = UDim2.new(1, -24, 0.5, -6),
+            Size = UDim2.new(0, 12, 0, 12),
             Image = "rbxassetid://3926305904",
             ImageRectOffset = Vector2.new(564, 284),
             ImageRectSize = Vector2.new(36, 36),
@@ -526,14 +550,16 @@ function Wisper:CreateWindow(Config)
         local function UpdateVisualState(selected)
             IsSelected = selected
             if selected then
-                -- Selected: accent background, white text/icons
+                -- Selected: accent background (solid), white text/icons
+                CategoryGradient.Enabled = false
                 Tween(CategoryButton, {BackgroundColor3 = Theme.Accent}, 0.15)
                 Tween(CategoryLabel, {TextTransparency = 0}, 0.15)
                 Tween(CategoryIcon, {ImageTransparency = 0}, 0.15)
                 Tween(ArrowIcon, {ImageTransparency = 0}, 0.15)
             else
-                -- Not selected: normal background, dimmed text/icons
-                Tween(CategoryButton, {BackgroundColor3 = Theme.CategoryBg}, 0.15)
+                -- Not selected: gradient background, dimmed text/icons
+                CategoryGradient.Enabled = true
+                Tween(CategoryButton, {BackgroundColor3 = Theme.CategoryBgTop}, 0.15)
                 Tween(CategoryLabel, {TextTransparency = Theme.TextDim}, 0.15)
                 Tween(CategoryIcon, {ImageTransparency = Theme.TextDim}, 0.15)
                 Tween(ArrowIcon, {ImageTransparency = 0.6}, 0.15)
