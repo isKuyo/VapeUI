@@ -1,3 +1,4 @@
+print("b")
 local VapeStyle = {}
 
 local TweenService = game:GetService("TweenService")
@@ -110,9 +111,37 @@ function VapeStyle:CreateWindow(Config)
         BackgroundColor3 = Theme.Background,
         BorderSizePixel = 0,
         Position = UDim2.new(0, 50, 0, 50),
-        Size = UDim2.new(0, 280, 0, 0),
+        Size = UDim2.new(0, 250, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
-        ClipsDescendants = false
+        ClipsDescendants = false,
+        ZIndex = 5
+    })
+
+    -- Drop Shadow for MainFrame
+    local MainDropShadowHolder = Create("Frame", {
+        Name = "DropShadowHolder",
+        Parent = MainFrame,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 0
+    })
+
+    local MainDropShadow = Create("ImageLabel", {
+        Name = "DropShadow",
+        Parent = MainDropShadowHolder,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 47, 1, 47),
+        ZIndex = 0,
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.5,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49, 49, 450, 450)
     })
 
     local MainCorner = Create("UICorner", {
@@ -130,8 +159,8 @@ function VapeStyle:CreateWindow(Config)
         Parent = MainFrame,
         PaddingTop = UDim.new(0, 20),
         PaddingBottom = UDim.new(0, 20),
-        PaddingLeft = UDim.new(0, 20),
-        PaddingRight = UDim.new(0, 20)
+        PaddingLeft = UDim.new(0, 15),
+        PaddingRight = UDim.new(0, 15)
     })
 
     local MainLayout = Create("UIListLayout", {
@@ -219,11 +248,39 @@ function VapeStyle:CreateWindow(Config)
         Parent = ScreenGui,
         BackgroundColor3 = Theme.Background,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 340, 0, 50),
-        Size = UDim2.new(0, 300, 0, 0),
+        Position = UDim2.new(0, 310, 0, 50),
+        Size = UDim2.new(0, 280, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         Visible = false,
-        ClipsDescendants = false
+        ClipsDescendants = false,
+        ZIndex = 5
+    })
+
+    -- Drop Shadow for SubMenuFrame
+    local SubDropShadowHolder = Create("Frame", {
+        Name = "DropShadowHolder",
+        Parent = SubMenuFrame,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 0
+    })
+
+    local SubDropShadow = Create("ImageLabel", {
+        Name = "DropShadow",
+        Parent = SubDropShadowHolder,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 47, 1, 47),
+        ZIndex = 0,
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.5,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49, 49, 450, 450)
     })
 
     local SubMenuCorner = Create("UICorner", {
