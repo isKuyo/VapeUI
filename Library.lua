@@ -173,18 +173,52 @@ function Wisper:CreateWindow(Config)
         ZIndex = 6
     })
 
-    -- Title Label in Header
+    -- Corner for header (top corners only)
+    local HeaderCorner = Create("UICorner", {
+        CornerRadius = UDim.new(0, 10),
+        Parent = Header
+    })
+
+    -- Cover bottom corners of header (so only top is rounded)
+    local HeaderBottomCover = Create("Frame", {
+        Name = "HeaderBottomCover",
+        Parent = Header,
+        BackgroundColor3 = Theme.Header,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 1, -10),
+        Size = UDim2.new(1, 0, 0, 10),
+        ZIndex = 6
+    })
+
+    -- Title Label in Header (accent color)
     local TitleLabel = Create("TextLabel", {
         Name = "TitleLabel",
         Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(0, 100, 1, 0),
+        Size = UDim2.new(0, 50, 1, 0),
         Font = Enum.Font.GothamBold,
         Text = Config.Name,
-        TextColor3 = Color3.fromRGB(108, 160, 220),
-        TextSize = 16,
+        TextColor3 = Theme.Accent,
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 7
+    })
+
+    -- Game Name Label (next to title, uses real game name)
+    local GameNameLabel = Create("TextLabel", {
+        Name = "GameNameLabel",
+        Parent = Header,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 60, 0, 0),
+        Size = UDim2.new(1, -90, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+        TextColor3 = Theme.Text,
+        TextTransparency = 0.5,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
         ZIndex = 7
     })
 
@@ -242,6 +276,23 @@ function Wisper:CreateWindow(Config)
         ZIndex = 6
     })
 
+    -- Corner for footer (bottom corners only)
+    local FooterCorner = Create("UICorner", {
+        CornerRadius = UDim.new(0, 10),
+        Parent = Footer
+    })
+
+    -- Cover top corners of footer (so only bottom is rounded)
+    local FooterTopCover = Create("Frame", {
+        Name = "FooterTopCover",
+        Parent = Footer,
+        BackgroundColor3 = Theme.Header,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 10),
+        ZIndex = 6
+    })
+
     -- Footer top line
     local FooterLine = Create("Frame", {
         Name = "FooterLine",
@@ -261,7 +312,7 @@ function Wisper:CreateWindow(Config)
         Position = UDim2.new(0, 12, 0, 0),
         Size = UDim2.new(1, -24, 1, 0),
         Font = Enum.Font.Gotham,
-        Text = Config.GameName .. " - " .. Config.Version,
+        Text = Config.Version,
         TextColor3 = Theme.Text,
         TextTransparency = 0.8,
         TextSize = 9,
@@ -376,12 +427,12 @@ function Wisper:CreateWindow(Config)
 
         local CategoryIndex = #Categories + 1
 
-        -- Category Button (full width, no rounded corners, flat design)
+        -- Category Button (full width, no stroke, flat design)
         local CategoryButton = Create("Frame", {
             Name = "CategoryButton_" .. CategoryConfig.Name,
             Parent = CategoriesContainer,
             BackgroundColor3 = Theme.CategoryBg,
-            Size = UDim2.new(1, 0, 0, 31),
+            Size = UDim2.new(1, 0, 0, 38),
             LayoutOrder = CategoryIndex,
             ZIndex = 6
         })
@@ -391,8 +442,8 @@ function Wisper:CreateWindow(Config)
             Name = "Icon",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 15, 0.5, -8),
-            Size = UDim2.new(0, 16, 0, 16),
+            Position = UDim2.new(0, 15, 0.5, -10),
+            Size = UDim2.new(0, 20, 0, 20),
             Image = CategoryConfig.Icon,
             ImageRectOffset = CategoryConfig.IconRectOffset,
             ImageRectSize = CategoryConfig.IconRectSize,
@@ -406,13 +457,13 @@ function Wisper:CreateWindow(Config)
             Name = "Label",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 43, 0, 0),
+            Position = UDim2.new(0, 45, 0, 0),
             Size = UDim2.new(1, -70, 1, 0),
-            Font = Enum.Font.Gotham,
+            Font = Enum.Font.GothamMedium,
             Text = CategoryConfig.Name,
             TextColor3 = Theme.Text,
             TextTransparency = Theme.TextDim,
-            TextSize = 11,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 7
         })
@@ -422,8 +473,8 @@ function Wisper:CreateWindow(Config)
             Name = "Arrow",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(1, -20, 0.5, -4),
-            Size = UDim2.new(0, 8, 0, 8),
+            Position = UDim2.new(1, -22, 0.5, -5),
+            Size = UDim2.new(0, 10, 0, 10),
             Image = "rbxassetid://3926305904",
             ImageRectOffset = Vector2.new(564, 284),
             ImageRectSize = Vector2.new(36, 36),
@@ -442,6 +493,8 @@ function Wisper:CreateWindow(Config)
             ZIndex = 8
         })
 
+        local IsSelected = false
+
         -- Modules container for this category (inside SubMenuFrame)
         local ModulesContainer = Create("Frame", {
             Name = "ModulesContainer_" .. CategoryConfig.Name,
@@ -459,43 +512,69 @@ function Wisper:CreateWindow(Config)
             Padding = UDim.new(0, 6)
         })
 
+        -- Function to update visual state
+        local function UpdateVisualState(selected)
+            IsSelected = selected
+            if selected then
+                -- Selected: accent background, white text/icons
+                Tween(CategoryButton, {BackgroundColor3 = Theme.Accent}, 0.15)
+                Tween(CategoryLabel, {TextTransparency = 0}, 0.15)
+                Tween(CategoryIcon, {ImageTransparency = 0}, 0.15)
+                Tween(ArrowIcon, {ImageTransparency = 0}, 0.15)
+            else
+                -- Not selected: normal background, dimmed text/icons
+                Tween(CategoryButton, {BackgroundColor3 = Theme.CategoryBg}, 0.15)
+                Tween(CategoryLabel, {TextTransparency = Theme.TextDim}, 0.15)
+                Tween(CategoryIcon, {ImageTransparency = Theme.TextDim}, 0.15)
+                Tween(ArrowIcon, {ImageTransparency = 0.6}, 0.15)
+            end
+        end
+
         local CategoryData = {
             Name = CategoryConfig.Name,
             Button = CategoryButton,
             ModulesContainer = ModulesContainer,
-            Modules = {}
+            Modules = {},
+            UpdateVisualState = UpdateVisualState
         }
 
         table.insert(Categories, CategoryData)
 
         -- Hover effects
         ClickButton.MouseEnter:Connect(function()
-            Tween(CategoryLabel, {TextTransparency = 0.2}, 0.15)
-            Tween(CategoryIcon, {ImageTransparency = 0.2}, 0.15)
+            if not IsSelected then
+                Tween(CategoryLabel, {TextTransparency = 0.2}, 0.15)
+                Tween(CategoryIcon, {ImageTransparency = 0.2}, 0.15)
+            end
         end)
 
         ClickButton.MouseLeave:Connect(function()
-            Tween(CategoryLabel, {TextTransparency = Theme.TextDim}, 0.15)
-            Tween(CategoryIcon, {ImageTransparency = Theme.TextDim}, 0.15)
+            if not IsSelected then
+                Tween(CategoryLabel, {TextTransparency = Theme.TextDim}, 0.15)
+                Tween(CategoryIcon, {ImageTransparency = Theme.TextDim}, 0.15)
+            end
         end)
 
         -- Click to open sub menu
         ClickButton.MouseButton1Click:Connect(function()
-            -- Hide all other modules containers
+            -- Hide all other modules containers and reset their visual state
             for _, Cat in ipairs(Categories) do
                 Cat.ModulesContainer.Visible = false
+                Cat.UpdateVisualState(false)
             end
 
             if CurrentCategory == CategoryData then
                 -- Close sub menu
                 CurrentCategory = nil
                 SubMenuFrame.Visible = false
+                UpdateVisualState(false)
             else
                 -- Open this category's sub menu
                 CurrentCategory = CategoryData
                 CategoryData.ModulesContainer.Visible = true
                 SubMenuFrame.Visible = true
                 UpdateSubMenuPosition()
+                UpdateVisualState(true)
             end
         end)
 
