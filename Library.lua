@@ -14,8 +14,8 @@ if _G.WisperInstance then
 end
 
 local Theme = {
-    Background = Color3.fromRGB(26, 25, 26), -- #1A191A
-    Header = Color3.fromRGB(20, 20, 20), -- #141414
+    Background = Color3.fromRGB(24, 24, 27), -- #18181B
+    Header = Color3.fromRGB(22, 22, 25), -- #161619
     Line = Color3.fromRGB(31, 30, 31), -- #1F1E1F
     CategoryBgTop = Color3.fromRGB(31, 31, 36), -- #1F1F24
     CategoryBgBottom = Color3.fromRGB(27, 27, 32), -- #1B1B20
@@ -197,24 +197,24 @@ function Wisper:CreateWindow(Config)
         Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(0, 50, 1, 0),
+        Size = UDim2.new(0, 45, 1, 0),
         Font = Enum.Font.GothamBold,
-        Text = Config.Name .. " -",
+        Text = Config.Name,
         TextColor3 = Theme.Accent,
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 7
     })
 
-    -- Game Name Label (next to title, uses real game name)
+    -- Game Name Label (next to title, uses real game name with - prefix)
     local GameNameLabel = Create("TextLabel", {
         Name = "GameNameLabel",
         Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 68, 0, 0),
-        Size = UDim2.new(1, -98, 1, 0),
+        Position = UDim2.new(0, 55, 0, 0),
+        Size = UDim2.new(1, -85, 1, 0),
         Font = Enum.Font.Gotham,
-        Text = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+        Text = "- " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
         TextColor3 = Theme.Text,
         TextTransparency = 0.5,
         TextSize = 11,
@@ -387,7 +387,7 @@ function Wisper:CreateWindow(Config)
         local CategoryButton = Create("Frame", {
             Name = "CategoryButton_" .. CategoryConfig.Name,
             Parent = CategoriesContainer,
-            BackgroundColor3 = Theme.CategoryBgTop,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
             BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 0, 32),
             LayoutOrder = CategoryIndex,
@@ -448,7 +448,7 @@ function Wisper:CreateWindow(Config)
             Position = UDim2.new(1, -24, 0.5, -6),
             Size = UDim2.new(0, 12, 0, 12),
             Image = "rbxassetid://3926305904",
-            ImageRectOffset = Vector2.new(564, 284),
+            ImageRectOffset = Vector2.new(964, 284),
             ImageRectSize = Vector2.new(36, 36),
             ImageColor3 = Theme.Text,
             ImageTransparency = 0.6,
@@ -557,9 +557,9 @@ function Wisper:CreateWindow(Config)
                 Tween(CategoryIcon, {ImageTransparency = 0}, 0.15)
                 Tween(ArrowIcon, {ImageTransparency = 0}, 0.15)
             else
-                -- Not selected: gradient background, dimmed text/icons
+                -- Not selected: white background with gradient, dimmed text/icons
                 CategoryGradient.Enabled = true
-                Tween(CategoryButton, {BackgroundColor3 = Theme.CategoryBgTop}, 0.15)
+                Tween(CategoryButton, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15)
                 Tween(CategoryLabel, {TextTransparency = Theme.TextDim}, 0.15)
                 Tween(CategoryIcon, {ImageTransparency = Theme.TextDim}, 0.15)
                 Tween(ArrowIcon, {ImageTransparency = 0.6}, 0.15)
