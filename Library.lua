@@ -104,7 +104,7 @@ function Wisper:CreateWindow(Config)
 
     _G.WisperInstance = ScreenGui
 
-    local FRAME_WIDTH = 233
+    local FRAME_WIDTH = 260
 
     -- Drop Shadow for MainFrame (separate frame in ScreenGui)
     local MainDropShadow = Create("ImageLabel", {
@@ -206,7 +206,7 @@ function Wisper:CreateWindow(Config)
         ZIndex = 7
     })
 
-    -- Game Name Label (next to title, uses real game name with - prefix)
+    -- Game Name Label (next to title, uses real game name)
     local GameNameLabel = Create("TextLabel", {
         Name = "GameNameLabel",
         Parent = Header,
@@ -214,7 +214,7 @@ function Wisper:CreateWindow(Config)
         Position = UDim2.new(0, 55, 0, 0),
         Size = UDim2.new(1, -85, 1, 0),
         Font = Enum.Font.Gotham,
-        Text = "- " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+        Text = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
         TextColor3 = Theme.Text,
         TextTransparency = 0.5,
         TextSize = 11,
@@ -499,22 +499,74 @@ function Wisper:CreateWindow(Config)
         })
 
         local SubMenuCorner = Create("UICorner", {
-            CornerRadius = UDim.new(0, 5),
+            CornerRadius = UDim.new(0, 8),
             Parent = SubMenuFrame
-        })
-
-        local SubMenuPadding = Create("UIPadding", {
-            Parent = SubMenuFrame,
-            PaddingTop = UDim.new(0, 15),
-            PaddingBottom = UDim.new(0, 15),
-            PaddingLeft = UDim.new(0, 15),
-            PaddingRight = UDim.new(0, 15)
         })
 
         local SubMenuLayout = Create("UIListLayout", {
             Parent = SubMenuFrame,
             SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 6)
+            Padding = UDim.new(0, 0)
+        })
+
+        -- SubMenu Header with category name and icon
+        local SubMenuHeader = Create("Frame", {
+            Name = "SubMenuHeader",
+            Parent = SubMenuFrame,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 36),
+            LayoutOrder = 0,
+            ZIndex = 6
+        })
+
+        local SubMenuHeaderPadding = Create("UIPadding", {
+            Parent = SubMenuHeader,
+            PaddingLeft = UDim.new(0, 12),
+            PaddingRight = UDim.new(0, 12)
+        })
+
+        -- Category icon in header
+        local SubMenuIcon = Create("ImageLabel", {
+            Name = "Icon",
+            Parent = SubMenuHeader,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 0, 0.5, -8),
+            Size = UDim2.new(0, 16, 0, 16),
+            Image = CategoryConfig.Icon,
+            ImageRectOffset = CategoryConfig.IconRectOffset,
+            ImageRectSize = CategoryConfig.IconRectSize,
+            ImageColor3 = Theme.Text,
+            ZIndex = 7
+        })
+
+        -- Category name in header
+        local SubMenuTitle = Create("TextLabel", {
+            Name = "Title",
+            Parent = SubMenuHeader,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 24, 0, 0),
+            Size = UDim2.new(1, -50, 1, 0),
+            Font = Enum.Font.GothamMedium,
+            Text = CategoryConfig.Name,
+            TextColor3 = Theme.Text,
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 7
+        })
+
+        -- Collapse arrow in header
+        local SubMenuArrow = Create("ImageLabel", {
+            Name = "Arrow",
+            Parent = SubMenuHeader,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(1, -12, 0.5, -5),
+            Size = UDim2.new(0, 10, 0, 10),
+            Image = "rbxassetid://3926305904",
+            ImageRectOffset = Vector2.new(364, 44),
+            ImageRectSize = Vector2.new(36, 36),
+            ImageColor3 = Theme.Text,
+            ImageTransparency = 0.5,
+            ZIndex = 7
         })
 
         -- Update shadow for this submenu
@@ -530,20 +582,29 @@ function Wisper:CreateWindow(Config)
         SubMenuFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateThisShadow)
         SubMenuFrame:GetPropertyChangedSignal("Visible"):Connect(UpdateThisShadow)
 
-        -- Modules container for this category
+        -- Modules container for this category (below header)
         local ModulesContainer = Create("Frame", {
             Name = "ModulesContainer_" .. CategoryConfig.Name,
             Parent = SubMenuFrame,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 1
+            LayoutOrder = 1,
+            ZIndex = 6
+        })
+
+        local ModulesPadding = Create("UIPadding", {
+            Parent = ModulesContainer,
+            PaddingTop = UDim.new(0, 4),
+            PaddingBottom = UDim.new(0, 10),
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10)
         })
 
         local ModulesLayout = Create("UIListLayout", {
             Parent = ModulesContainer,
             SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 6)
+            Padding = UDim.new(0, 2)
         })
 
         -- Function to update visual state
@@ -637,59 +698,40 @@ function Wisper:CreateWindow(Config)
             local ToggleFrame = Create("Frame", {
                 Name = "Toggle_" .. ToggleConfig.Name,
                 Parent = ModulesContainer,
-                BackgroundColor3 = Theme.ModuleBackground,
-                Size = UDim2.new(1, 0, 0, 36),
-                LayoutOrder = #CategoryData.Modules + 1
-            })
-
-            local ToggleCorner = Create("UICorner", {
-                CornerRadius = UDim.new(0, 6),
-                Parent = ToggleFrame
-            })
-
-            local ToggleStroke = Create("UIStroke", {
-                Parent = ToggleFrame,
-                Color = Theme.ModuleStroke,
-                Thickness = 1
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 28),
+                LayoutOrder = #CategoryData.Modules + 1,
+                ZIndex = 6
             })
 
             local ToggleLabel = Create("TextLabel", {
                 Name = "Label",
                 Parent = ToggleFrame,
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 10, 0, 0),
-                Size = UDim2.new(1, -60, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(1, -50, 1, 0),
                 Font = Enum.Font.Gotham,
                 Text = ToggleConfig.Name,
                 TextColor3 = Theme.Text,
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left
+                TextTransparency = Theme.TextDim,
+                TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 7
             })
 
-            local ToggleBox = Create("Frame", {
-                Name = "ToggleBox",
+            -- Indicator bar on the right
+            local ToggleIndicator = Create("Frame", {
+                Name = "Indicator",
                 Parent = ToggleFrame,
-                BackgroundColor3 = Enabled and Theme.ToggleEnabled or Theme.ToggleDisabled,
-                Position = UDim2.new(1, -45, 0.5, -10),
-                Size = UDim2.new(0, 36, 0, 20)
+                BackgroundColor3 = Enabled and Theme.Accent or Theme.ModuleStroke,
+                Position = UDim2.new(1, -40, 0.5, -4),
+                Size = UDim2.new(0, 32, 0, 8),
+                ZIndex = 7
             })
 
-            local ToggleBoxCorner = Create("UICorner", {
-                CornerRadius = UDim.new(1, 0),
-                Parent = ToggleBox
-            })
-
-            local ToggleCircle = Create("Frame", {
-                Name = "Circle",
-                Parent = ToggleBox,
-                BackgroundColor3 = Theme.Text,
-                Position = Enabled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
-                Size = UDim2.new(0, 16, 0, 16)
-            })
-
-            local ToggleCircleCorner = Create("UICorner", {
-                CornerRadius = UDim.new(1, 0),
-                Parent = ToggleCircle
+            local ToggleIndicatorCorner = Create("UICorner", {
+                CornerRadius = UDim.new(0, 2),
+                Parent = ToggleIndicator
             })
 
             local ToggleClickArea = Create("TextButton", {
@@ -698,18 +740,32 @@ function Wisper:CreateWindow(Config)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0),
                 Text = "",
-                AutoButtonColor = false
+                AutoButtonColor = false,
+                ZIndex = 8
             })
 
             local function UpdateToggle()
                 if Enabled then
-                    Tween(ToggleBox, {BackgroundColor3 = Theme.ToggleEnabled}, 0.15)
-                    Tween(ToggleCircle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.15)
+                    Tween(ToggleIndicator, {BackgroundColor3 = Theme.Accent}, 0.15)
+                    Tween(ToggleLabel, {TextTransparency = 0}, 0.15)
                 else
-                    Tween(ToggleBox, {BackgroundColor3 = Theme.ToggleDisabled}, 0.15)
-                    Tween(ToggleCircle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.15)
+                    Tween(ToggleIndicator, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
+                    Tween(ToggleLabel, {TextTransparency = Theme.TextDim}, 0.15)
                 end
             end
+
+            -- Hover effect
+            ToggleClickArea.MouseEnter:Connect(function()
+                if not Enabled then
+                    Tween(ToggleLabel, {TextTransparency = 0.3}, 0.1)
+                end
+            end)
+
+            ToggleClickArea.MouseLeave:Connect(function()
+                if not Enabled then
+                    Tween(ToggleLabel, {TextTransparency = Theme.TextDim}, 0.1)
+                end
+            end)
 
             ToggleClickArea.MouseButton1Click:Connect(function()
                 Enabled = not Enabled
