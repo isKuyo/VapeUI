@@ -1,3 +1,4 @@
+print("b")
 local Wisper = {}
 
 local TweenService = game:GetService("TweenService")
@@ -14,17 +15,17 @@ if _G.WisperInstance then
 end
 
 local Theme = {
-    Background = Color3.fromRGB(32, 32, 32), -- 202020
-    Stroke = Color3.fromRGB(58, 58, 59), -- 3A3A3B
-    Accent = Color3.fromRGB(6, 125, 98), -- 067D62
-    AccentHover = Color3.fromRGB(8, 145, 114),
+    Background = Color3.fromRGB(26, 25, 26), -- #1A191A
+    Header = Color3.fromRGB(20, 20, 20), -- #141414
+    Line = Color3.fromRGB(31, 30, 31), -- #1F1E1F
+    CategoryBg = Color3.fromRGB(26, 25, 26), -- #1A191A
     Text = Color3.fromRGB(255, 255, 255),
-    TextTransparent = 0.3, -- ~0.7 opacity
+    TextDim = 0.4, -- 60% opacity (0.4 transparency)
     SubText = Color3.fromRGB(150, 150, 150),
-    ButtonBackground = Color3.fromRGB(6, 125, 98), -- 067D62
-    ButtonStroke = Color3.fromRGB(80, 160, 140),
-    ModuleBackground = Color3.fromRGB(40, 40, 40),
-    ModuleStroke = Color3.fromRGB(58, 58, 59),
+    Accent = Color3.fromRGB(6, 125, 98), -- #067D62
+    AccentHover = Color3.fromRGB(8, 145, 114),
+    ModuleBackground = Color3.fromRGB(35, 34, 35),
+    ModuleStroke = Color3.fromRGB(45, 44, 45),
     ToggleEnabled = Color3.fromRGB(6, 125, 98),
     ToggleDisabled = Color3.fromRGB(60, 60, 60)
 }
@@ -103,6 +104,8 @@ function Wisper:CreateWindow(Config)
 
     _G.WisperInstance = ScreenGui
 
+    local FRAME_WIDTH = 233
+
     -- Drop Shadow for MainFrame (separate frame in ScreenGui)
     local MainDropShadow = Create("ImageLabel", {
         Name = "MainDropShadow",
@@ -110,8 +113,8 @@ function Wisper:CreateWindow(Config)
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        Position = UDim2.new(0, 50 + 125, 0, 50),
-        Size = UDim2.new(0, 250 + 47, 0, 100),
+        Position = UDim2.new(0, 50 + FRAME_WIDTH/2, 0, 50),
+        Size = UDim2.new(0, FRAME_WIDTH + 47, 0, 100),
         ZIndex = 0,
         Image = "rbxassetid://6014261993",
         ImageColor3 = Color3.fromRGB(0, 0, 0),
@@ -120,17 +123,23 @@ function Wisper:CreateWindow(Config)
         SliceCenter = Rect.new(49, 49, 450, 450)
     })
 
-    -- Main Frame
+    -- Main Frame Container (for layout)
     local MainFrame = Create("Frame", {
         Name = "MainFrame",
         Parent = ScreenGui,
         BackgroundColor3 = Theme.Background,
         BorderSizePixel = 0,
         Position = UDim2.new(0, 50, 0, 50),
-        Size = UDim2.new(0, 250, 0, 0),
+        Size = UDim2.new(0, FRAME_WIDTH, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
-        ClipsDescendants = true,
+        ClipsDescendants = false,
         ZIndex = 5
+    })
+
+    local MainLayout = Create("UIListLayout", {
+        Parent = MainFrame,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 0)
     })
 
     -- Update shadow position/size to follow MainFrame
@@ -148,97 +157,117 @@ function Wisper:CreateWindow(Config)
     RunService.RenderStepped:Connect(UpdateMainShadow)
 
     local MainCorner = Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
+        CornerRadius = UDim.new(0, 5),
         Parent = MainFrame
-    })
-
-    local MainStroke = Create("UIStroke", {
-        Parent = MainFrame,
-        Color = Theme.Stroke,
-        Thickness = 1
-    })
-
-    local MainPadding = Create("UIPadding", {
-        Parent = MainFrame,
-        PaddingTop = UDim.new(0, 20),
-        PaddingBottom = UDim.new(0, 20),
-        PaddingLeft = UDim.new(0, 15),
-        PaddingRight = UDim.new(0, 15)
-    })
-
-    local MainLayout = Create("UIListLayout", {
-        Parent = MainFrame,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 12)
     })
 
     MakeDraggable(MainFrame)
 
-    -- Header Container
-    local HeaderContainer = Create("Frame", {
-        Name = "HeaderContainer",
+    -- Header (dark bar at top)
+    local Header = Create("Frame", {
+        Name = "Header",
         Parent = MainFrame,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 50),
-        LayoutOrder = 0
+        BackgroundColor3 = Theme.Header,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 36),
+        LayoutOrder = 1,
+        ZIndex = 6
     })
 
-    -- Title (wisper style)
+    -- Title Label in Header
     local TitleLabel = Create("TextLabel", {
         Name = "TitleLabel",
-        Parent = HeaderContainer,
+        Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(1, -30, 0, 30),
+        Position = UDim2.new(0, 10, 0, 0),
+        Size = UDim2.new(0, 100, 1, 0),
         Font = Enum.Font.GothamBold,
         Text = Config.Name,
         TextColor3 = Color3.fromRGB(108, 160, 220),
-        TextSize = 28,
-        TextXAlignment = Enum.TextXAlignment.Left
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 7
     })
 
-    -- Search Icon (top right)
+    -- Search Icon (top right in header)
     local SearchIcon = Create("ImageLabel", {
         Name = "SearchIcon",
-        Parent = HeaderContainer,
+        Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(1, -20, 0, 5),
-        Size = UDim2.new(0, 18, 0, 18),
+        Position = UDim2.new(1, -28, 0.5, -10),
+        Size = UDim2.new(0, 20, 0, 20),
         Image = "rbxassetid://3926305904",
         ImageRectOffset = Vector2.new(964, 324),
         ImageRectSize = Vector2.new(36, 36),
-        ImageColor3 = Theme.SubText
+        ImageColor3 = Theme.Text,
+        ImageTransparency = 0.6,
+        ZIndex = 7
     })
 
-    -- Game Name and Version
-    local GameInfoLabel = Create("TextLabel", {
-        Name = "GameInfoLabel",
-        Parent = HeaderContainer,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 32),
-        Size = UDim2.new(1, 0, 0, 18),
-        Font = Enum.Font.Gotham,
-        Text = Config.GameName .. " - " .. Config.Version,
-        TextColor3 = Theme.Text,
-        TextTransparency = Theme.TextTransparent,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left
+    -- Header bottom line (inside header)
+    local HeaderLine = Create("Frame", {
+        Name = "HeaderLine",
+        Parent = Header,
+        BackgroundColor3 = Theme.Line,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 1, -1),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 7
     })
 
-    -- Buttons Container
-    local ButtonsContainer = Create("Frame", {
-        Name = "ButtonsContainer",
+    -- Categories Container (between header and footer)
+    local CategoriesContainer = Create("Frame", {
+        Name = "CategoriesContainer",
         Parent = MainFrame,
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
-        LayoutOrder = 1
+        LayoutOrder = 2,
+        ZIndex = 6
     })
 
-    local ButtonsLayout = Create("UIListLayout", {
-        Parent = ButtonsContainer,
+    local CategoriesLayout = Create("UIListLayout", {
+        Parent = CategoriesContainer,
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8)
+        Padding = UDim.new(0, 0)
+    })
+
+    -- Footer (dark bar at bottom with placeholder text)
+    local Footer = Create("Frame", {
+        Name = "Footer",
+        Parent = MainFrame,
+        BackgroundColor3 = Theme.Header,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 26),
+        LayoutOrder = 3,
+        ZIndex = 6
+    })
+
+    -- Footer top line
+    local FooterLine = Create("Frame", {
+        Name = "FooterLine",
+        Parent = Footer,
+        BackgroundColor3 = Theme.Line,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 1),
+        ZIndex = 7
+    })
+
+    -- Footer placeholder text
+    local FooterText = Create("TextLabel", {
+        Name = "FooterText",
+        Parent = Footer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 12, 0, 0),
+        Size = UDim2.new(1, -24, 1, 0),
+        Font = Enum.Font.Gotham,
+        Text = Config.GameName .. " - " .. Config.Version,
+        TextColor3 = Theme.Text,
+        TextTransparency = 0.8,
+        TextSize = 9,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 7
     })
 
     local Categories = {}
@@ -292,14 +321,8 @@ function Wisper:CreateWindow(Config)
     RunService.RenderStepped:Connect(UpdateSubShadow)
 
     local SubMenuCorner = Create("UICorner", {
-        CornerRadius = UDim.new(0, 12),
+        CornerRadius = UDim.new(0, 5),
         Parent = SubMenuFrame
-    })
-
-    local SubMenuStroke = Create("UIStroke", {
-        Parent = SubMenuFrame,
-        Color = Theme.Stroke,
-        Thickness = 1
     })
 
     local SubMenuPadding = Create("UIPadding", {
@@ -348,54 +371,66 @@ function Wisper:CreateWindow(Config)
     function Window:AddCategory(CategoryConfig)
         CategoryConfig = CategoryConfig or {}
         CategoryConfig.Name = CategoryConfig.Name or "Category"
+        CategoryConfig.Icon = CategoryConfig.Icon or "rbxassetid://3926305904"
+        CategoryConfig.IconRectOffset = CategoryConfig.IconRectOffset or Vector2.new(764, 244)
+        CategoryConfig.IconRectSize = CategoryConfig.IconRectSize or Vector2.new(36, 36)
 
         local CategoryIndex = #Categories + 1
 
-        -- Category Button
+        -- Category Button (full width, no rounded corners, flat design)
         local CategoryButton = Create("Frame", {
             Name = "CategoryButton_" .. CategoryConfig.Name,
-            Parent = ButtonsContainer,
-            BackgroundColor3 = Theme.ButtonBackground,
-            Size = UDim2.new(1, 0, 0, 38),
-            LayoutOrder = CategoryIndex
+            Parent = CategoriesContainer,
+            BackgroundColor3 = Theme.CategoryBg,
+            Size = UDim2.new(1, 0, 0, 31),
+            LayoutOrder = CategoryIndex,
+            ZIndex = 6
         })
 
-        local CategoryButtonCorner = Create("UICorner", {
-            CornerRadius = UDim.new(0, 8),
-            Parent = CategoryButton
-        })
-
-        local CategoryButtonStroke = Create("UIStroke", {
+        -- Category Icon (left side)
+        local CategoryIcon = Create("ImageLabel", {
+            Name = "Icon",
             Parent = CategoryButton,
-            Color = Theme.ButtonStroke,
-            Thickness = 1,
-            Transparency = 0.5
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 15, 0.5, -8),
+            Size = UDim2.new(0, 16, 0, 16),
+            Image = CategoryConfig.Icon,
+            ImageRectOffset = CategoryConfig.IconRectOffset,
+            ImageRectSize = CategoryConfig.IconRectSize,
+            ImageColor3 = Theme.Text,
+            ImageTransparency = Theme.TextDim,
+            ZIndex = 7
         })
 
+        -- Category Label
         local CategoryLabel = Create("TextLabel", {
             Name = "Label",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 12, 0, 0),
-            Size = UDim2.new(1, -50, 1, 0),
-            Font = Enum.Font.GothamMedium,
+            Position = UDim2.new(0, 43, 0, 0),
+            Size = UDim2.new(1, -70, 1, 0),
+            Font = Enum.Font.Gotham,
             Text = CategoryConfig.Name,
             TextColor3 = Theme.Text,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left
+            TextTransparency = Theme.TextDim,
+            TextSize = 11,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 7
         })
 
-        -- Close/X Icon
-        local CloseIcon = Create("ImageLabel", {
-            Name = "CloseIcon",
+        -- Arrow Icon (right side) - chevron right
+        local ArrowIcon = Create("ImageLabel", {
+            Name = "Arrow",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
-            Position = UDim2.new(1, -32, 0.5, -10),
-            Size = UDim2.new(0, 20, 0, 20),
+            Position = UDim2.new(1, -20, 0.5, -4),
+            Size = UDim2.new(0, 8, 0, 8),
             Image = "rbxassetid://3926305904",
-            ImageRectOffset = Vector2.new(284, 4),
-            ImageRectSize = Vector2.new(24, 24),
-            ImageColor3 = Theme.Text
+            ImageRectOffset = Vector2.new(564, 284),
+            ImageRectSize = Vector2.new(36, 36),
+            ImageColor3 = Theme.Text,
+            ImageTransparency = 0.6,
+            ZIndex = 7
         })
 
         local ClickButton = Create("TextButton", {
@@ -404,7 +439,8 @@ function Wisper:CreateWindow(Config)
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 1, 0),
             Text = "",
-            AutoButtonColor = false
+            AutoButtonColor = false,
+            ZIndex = 8
         })
 
         -- Modules container for this category (inside SubMenuFrame)
@@ -435,11 +471,13 @@ function Wisper:CreateWindow(Config)
 
         -- Hover effects
         ClickButton.MouseEnter:Connect(function()
-            Tween(CategoryButton, {BackgroundColor3 = Theme.AccentHover}, 0.15)
+            Tween(CategoryLabel, {TextTransparency = 0.2}, 0.15)
+            Tween(CategoryIcon, {ImageTransparency = 0.2}, 0.15)
         end)
 
         ClickButton.MouseLeave:Connect(function()
-            Tween(CategoryButton, {BackgroundColor3 = Theme.ButtonBackground}, 0.15)
+            Tween(CategoryLabel, {TextTransparency = Theme.TextDim}, 0.15)
+            Tween(CategoryIcon, {ImageTransparency = Theme.TextDim}, 0.15)
         end)
 
         -- Click to open sub menu
