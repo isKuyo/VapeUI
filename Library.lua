@@ -22,11 +22,11 @@ local Theme = {
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = 0.5, -- 50% opacity
     SubText = Color3.fromRGB(150, 150, 150),
-    Accent = Color3.fromRGB(5, 133, 104), -- #058568
-    AccentHover = Color3.fromRGB(10, 155, 120),
+    Accent = Color3.fromRGB(120, 134, 224), -- #7886E0
+    AccentHover = Color3.fromRGB(140, 154, 240),
     ModuleBackground = Color3.fromRGB(35, 34, 35),
     ModuleStroke = Color3.fromRGB(45, 44, 45),
-    ToggleEnabled = Color3.fromRGB(5, 133, 104), -- #058568
+    ToggleEnabled = Color3.fromRGB(120, 134, 224), -- #7886E0
     ToggleDisabled = Color3.fromRGB(60, 60, 60)
 }
 
@@ -323,7 +323,7 @@ function Wisper:CreateWindow(Config)
         Font = Enum.Font.Gotham,
         Text = Config.Version,
         TextColor3 = Theme.Text,
-        TextTransparency = 0.8,
+        TextTransparency = 0.5,
         TextSize = 9,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 7
@@ -498,6 +498,9 @@ function Wisper:CreateWindow(Config)
             ZIndex = 5
         })
 
+        -- Individual drag for this submenu
+        MakeDraggable(SubMenuFrame)
+
         local SubMenuCorner = Create("UICorner", {
             CornerRadius = UDim.new(0, 8),
             Parent = SubMenuFrame
@@ -635,6 +638,8 @@ function Wisper:CreateWindow(Config)
                 Tween(SubMenuArrowButton, {Rotation = 0}, 0.2)
                 ModulesContainer.Visible = true
             end
+            -- Update shadow after state change
+            task.defer(UpdateThisShadow)
         end
 
         -- Arrow button click
@@ -767,9 +772,10 @@ function Wisper:CreateWindow(Config)
             local ModuleHeader = Create("Frame", {
                 Name = "Header",
                 Parent = ModuleFrame,
-                BackgroundColor3 = Enabled and Theme.Accent or Theme.CategoryBgTop,
+                BackgroundColor3 = Enabled and Theme.Accent or Color3.fromRGB(255, 255, 255),
                 Size = UDim2.new(1, 0, 0, 28),
                 LayoutOrder = 0,
+                ClipsDescendants = true,
                 ZIndex = 6
             })
 
@@ -799,7 +805,7 @@ function Wisper:CreateWindow(Config)
                 Text = ModuleConfig.Name,
                 TextColor3 = Theme.Text,
                 TextTransparency = Enabled and 0 or Theme.TextDim,
-                TextSize = 12,
+                TextSize = 13,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 ZIndex = 7
             })
@@ -870,7 +876,7 @@ function Wisper:CreateWindow(Config)
                     Tween(SettingsButton, {ImageTransparency = 0.3}, 0.15)
                 else
                     ModuleHeaderGradient.Enabled = true
-                    Tween(ModuleHeader, {BackgroundColor3 = Theme.CategoryBgTop}, 0.15)
+                    Tween(ModuleHeader, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15)
                     Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.15)
                     Tween(SettingsButton, {ImageTransparency = 0.5}, 0.15)
                 end
@@ -962,7 +968,7 @@ function Wisper:CreateWindow(Config)
                     Text = ToggleConfig.Name,
                     TextColor3 = Theme.Text,
                     TextTransparency = OptionEnabled and 0.2 or 0.5,
-                    TextSize = 11,
+                    TextSize = 13,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     ZIndex = 7
                 })
@@ -1070,7 +1076,7 @@ function Wisper:CreateWindow(Config)
                     Text = SliderConfig.Name,
                     TextColor3 = Theme.Text,
                     TextTransparency = 0.3,
-                    TextSize = 11,
+                    TextSize = 13,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     ZIndex = 7
                 })
@@ -1084,7 +1090,7 @@ function Wisper:CreateWindow(Config)
                     Font = Enum.Font.Gotham,
                     Text = tostring(SliderValue),
                     TextColor3 = Theme.Accent,
-                    TextSize = 11,
+                    TextSize = 13,
                     TextXAlignment = Enum.TextXAlignment.Right,
                     ZIndex = 7
                 })
