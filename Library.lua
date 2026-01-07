@@ -198,7 +198,7 @@ function Wisper:CreateWindow(Config)
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0, 50, 1, 0),
         Font = Enum.Font.GothamBold,
-        Text = Config.Name,
+        Text = Config.Name .. " -",
         TextColor3 = Theme.Accent,
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -210,8 +210,8 @@ function Wisper:CreateWindow(Config)
         Name = "GameNameLabel",
         Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 60, 0, 0),
-        Size = UDim2.new(1, -90, 1, 0),
+        Position = UDim2.new(0, 68, 0, 0),
+        Size = UDim2.new(1, -98, 1, 0),
         Font = Enum.Font.Gotham,
         Text = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
         TextColor3 = Theme.Text,
@@ -321,85 +321,28 @@ function Wisper:CreateWindow(Config)
     })
 
     local Categories = {}
-    local CurrentCategory = nil
-    local SubMenuFrame = nil
+    local OpenCategories = {} -- Track open categories in order
 
-    -- Drop Shadow for SubMenuFrame (separate in ScreenGui)
-    local SubDropShadow = Create("ImageLabel", {
-        Name = "SubDropShadow",
-        Parent = ScreenGui,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 310 + 140, 0, 50),
-        Size = UDim2.new(0, 280 + 47, 0, 100),
-        ZIndex = 0,
-        Visible = false,
-        Image = "rbxassetid://6014261993",
-        ImageColor3 = Color3.fromRGB(0, 0, 0),
-        ImageTransparency = 0.5,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(49, 49, 450, 450)
-    })
+    local SUB_MENU_WIDTH = 250
+    local SUB_MENU_GAP = 10
 
-    -- Sub Menu Frame (appears when clicking a category)
-    SubMenuFrame = Create("Frame", {
-        Name = "SubMenuFrame",
-        Parent = ScreenGui,
-        BackgroundColor3 = Theme.Background,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 310, 0, 50),
-        Size = UDim2.new(0, 280, 0, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Visible = false,
-        ClipsDescendants = true,
-        ZIndex = 5
-    })
-
-    -- Update shadow position/size to follow SubMenuFrame
-    local function UpdateSubShadow()
-        local pos = SubMenuFrame.AbsolutePosition
-        local size = SubMenuFrame.AbsoluteSize
-        SubDropShadow.Position = UDim2.new(0, pos.X + size.X / 2, 0, pos.Y + size.Y / 2)
-        SubDropShadow.Size = UDim2.new(0, size.X + 47, 0, size.Y + 47)
-        SubDropShadow.Visible = SubMenuFrame.Visible
-    end
-
-    SubMenuFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdateSubShadow)
-    SubMenuFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateSubShadow)
-    SubMenuFrame:GetPropertyChangedSignal("Visible"):Connect(UpdateSubShadow)
-    RunService.RenderStepped:Connect(UpdateSubShadow)
-
-    local SubMenuCorner = Create("UICorner", {
-        CornerRadius = UDim.new(0, 5),
-        Parent = SubMenuFrame
-    })
-
-    local SubMenuPadding = Create("UIPadding", {
-        Parent = SubMenuFrame,
-        PaddingTop = UDim.new(0, 15),
-        PaddingBottom = UDim.new(0, 15),
-        PaddingLeft = UDim.new(0, 15),
-        PaddingRight = UDim.new(0, 15)
-    })
-
-    local SubMenuLayout = Create("UIListLayout", {
-        Parent = SubMenuFrame,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8)
-    })
-
-    MakeDraggable(SubMenuFrame)
-
-    -- Update SubMenu position based on MainFrame
-    local function UpdateSubMenuPosition()
+    -- Function to update all sub menu positions based on order
+    local function UpdateAllSubMenuPositions()
         local MainPos = MainFrame.AbsolutePosition
         local MainSize = MainFrame.AbsoluteSize
-        SubMenuFrame.Position = UDim2.new(0, MainPos.X + MainSize.X + 10, 0, MainPos.Y)
+        local currentX = MainPos.X + MainSize.X + SUB_MENU_GAP
+
+        for _, catData in ipairs(OpenCategories) do
+            if catData.SubMenuFrame and catData.SubMenuFrame.Visible then
+                catData.SubMenuFrame.Position = UDim2.new(0, currentX, 0, MainPos.Y)
+                currentX = currentX + SUB_MENU_WIDTH + SUB_MENU_GAP
+            end
+        end
     end
 
-    MainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdateSubMenuPosition)
-    MainFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateSubMenuPosition)
+    MainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdateAllSubMenuPositions)
+    MainFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateAllSubMenuPositions)
+    RunService.RenderStepped:Connect(UpdateAllSubMenuPositions)
 
     -- Toggle visibility
     local Visible = true
@@ -408,10 +351,14 @@ function Wisper:CreateWindow(Config)
         if Input.KeyCode == Config.KeyBind then
             Visible = not Visible
             MainFrame.Visible = Visible
-            if not Visible then
-                SubMenuFrame.Visible = false
-            elseif CurrentCategory then
-                SubMenuFrame.Visible = true
+            -- Hide/show all open sub menus
+            for _, catData in ipairs(OpenCategories) do
+                if catData.SubMenuFrame then
+                    catData.SubMenuFrame.Visible = Visible
+                    if catData.SubDropShadow then
+                        catData.SubDropShadow.Visible = Visible
+                    end
+                end
             end
         end
     end)
@@ -432,6 +379,7 @@ function Wisper:CreateWindow(Config)
             Name = "CategoryButton_" .. CategoryConfig.Name,
             Parent = CategoriesContainer,
             BackgroundColor3 = Theme.CategoryBg,
+            BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 0, 38),
             LayoutOrder = CategoryIndex,
             ZIndex = 6
@@ -495,15 +443,77 @@ function Wisper:CreateWindow(Config)
 
         local IsSelected = false
 
-        -- Modules container for this category (inside SubMenuFrame)
+        -- Create individual SubMenuFrame for this category
+        local SubDropShadow = Create("ImageLabel", {
+            Name = "SubDropShadow_" .. CategoryConfig.Name,
+            Parent = ScreenGui,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(0, SUB_MENU_WIDTH + 47, 0, 100),
+            ZIndex = 0,
+            Visible = false,
+            Image = "rbxassetid://6014261993",
+            ImageColor3 = Color3.fromRGB(0, 0, 0),
+            ImageTransparency = 0.5,
+            ScaleType = Enum.ScaleType.Slice,
+            SliceCenter = Rect.new(49, 49, 450, 450)
+        })
+
+        local SubMenuFrame = Create("Frame", {
+            Name = "SubMenuFrame_" .. CategoryConfig.Name,
+            Parent = ScreenGui,
+            BackgroundColor3 = Theme.Background,
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(0, SUB_MENU_WIDTH, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Visible = false,
+            ClipsDescendants = true,
+            ZIndex = 5
+        })
+
+        local SubMenuCorner = Create("UICorner", {
+            CornerRadius = UDim.new(0, 5),
+            Parent = SubMenuFrame
+        })
+
+        local SubMenuPadding = Create("UIPadding", {
+            Parent = SubMenuFrame,
+            PaddingTop = UDim.new(0, 15),
+            PaddingBottom = UDim.new(0, 15),
+            PaddingLeft = UDim.new(0, 15),
+            PaddingRight = UDim.new(0, 15)
+        })
+
+        local SubMenuLayout = Create("UIListLayout", {
+            Parent = SubMenuFrame,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 6)
+        })
+
+        -- Update shadow for this submenu
+        local function UpdateThisShadow()
+            local pos = SubMenuFrame.AbsolutePosition
+            local size = SubMenuFrame.AbsoluteSize
+            SubDropShadow.Position = UDim2.new(0, pos.X + size.X / 2, 0, pos.Y + size.Y / 2)
+            SubDropShadow.Size = UDim2.new(0, size.X + 47, 0, size.Y + 47)
+            SubDropShadow.Visible = SubMenuFrame.Visible
+        end
+
+        SubMenuFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdateThisShadow)
+        SubMenuFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateThisShadow)
+        SubMenuFrame:GetPropertyChangedSignal("Visible"):Connect(UpdateThisShadow)
+
+        -- Modules container for this category
         local ModulesContainer = Create("Frame", {
             Name = "ModulesContainer_" .. CategoryConfig.Name,
             Parent = SubMenuFrame,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
-            Visible = false,
-            LayoutOrder = CategoryIndex
+            LayoutOrder = 1
         })
 
         local ModulesLayout = Create("UIListLayout", {
@@ -533,9 +543,12 @@ function Wisper:CreateWindow(Config)
         local CategoryData = {
             Name = CategoryConfig.Name,
             Button = CategoryButton,
+            SubMenuFrame = SubMenuFrame,
+            SubDropShadow = SubDropShadow,
             ModulesContainer = ModulesContainer,
             Modules = {},
-            UpdateVisualState = UpdateVisualState
+            UpdateVisualState = UpdateVisualState,
+            IsOpen = false
         }
 
         table.insert(Categories, CategoryData)
@@ -555,27 +568,34 @@ function Wisper:CreateWindow(Config)
             end
         end)
 
-        -- Click to open sub menu
+        -- Click to toggle this category's sub menu
         ClickButton.MouseButton1Click:Connect(function()
-            -- Hide all other modules containers and reset their visual state
-            for _, Cat in ipairs(Categories) do
-                Cat.ModulesContainer.Visible = false
-                Cat.UpdateVisualState(false)
-            end
-
-            if CurrentCategory == CategoryData then
-                -- Close sub menu
-                CurrentCategory = nil
+            if CategoryData.IsOpen then
+                -- Close this category
+                CategoryData.IsOpen = false
                 SubMenuFrame.Visible = false
+                SubDropShadow.Visible = false
                 UpdateVisualState(false)
+                
+                -- Remove from open categories
+                for i, cat in ipairs(OpenCategories) do
+                    if cat == CategoryData then
+                        table.remove(OpenCategories, i)
+                        break
+                    end
+                end
             else
-                -- Open this category's sub menu
-                CurrentCategory = CategoryData
-                CategoryData.ModulesContainer.Visible = true
+                -- Open this category
+                CategoryData.IsOpen = true
                 SubMenuFrame.Visible = true
-                UpdateSubMenuPosition()
                 UpdateVisualState(true)
+                
+                -- Add to open categories
+                table.insert(OpenCategories, CategoryData)
             end
+            
+            -- Update all positions
+            UpdateAllSubMenuPositions()
         end)
 
         local Category = {}
