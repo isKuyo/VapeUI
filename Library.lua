@@ -1651,7 +1651,7 @@ function Wisper:CreateWindow(Config)
                 Name = "KeybindButton",
                 Parent = ModuleHeader,
                 BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                BackgroundTransparency = 0.8,
+                BackgroundTransparency = Enabled and 0.8 or 0.95,
                 Position = UDim2.new(1, -58, 0.5, -9),
                 Size = UDim2.new(0, 26, 0, 18),
                 Font = Enum.Font.Gotham,
@@ -1733,11 +1733,13 @@ function Wisper:CreateWindow(Config)
                     Tween(ModuleHeader, {BackgroundColor3 = Theme.Accent}, 0.15)
                     Tween(ModuleLabel, {TextTransparency = 0}, 0.15)
                     Tween(SettingsButton, {ImageTransparency = 0.3}, 0.15)
+                    Tween(KeybindButton, {BackgroundTransparency = 0.8}, 0.15)
                 else
                     ModuleHeaderGradient.Enabled = true
                     Tween(ModuleHeader, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15)
                     Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.15)
                     Tween(SettingsButton, {ImageTransparency = 0.5}, 0.15)
+                    Tween(KeybindButton, {BackgroundTransparency = 0.95}, 0.15)
                 end
             end
 
@@ -1747,8 +1749,14 @@ function Wisper:CreateWindow(Config)
                 OptionsContainer.Visible = Expanded
             end
             
+            -- Hover state tracking for keybind visibility
+            local IsHoveringModule = false
+            local IsHoveringKeybind = false
+            local IsHoveringSettings = false
+            
             -- Function to update keybind visibility
-            local function UpdateKeybindVisibility(isHovering)
+            local function UpdateKeybindVisibility()
+                local isHovering = IsHoveringModule or IsHoveringKeybind or IsHoveringSettings
                 if CurrentKeybind or IsListeningForKeybind then
                     KeybindButton.Visible = true
                 else
@@ -1771,7 +1779,7 @@ function Wisper:CreateWindow(Config)
                         if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace then
                             CurrentKeybind = nil
                             KeybindButton.Text = "None"
-                            UpdateKeybindVisibility(false)
+                            UpdateKeybindVisibility()
                         else
                             CurrentKeybind = input.KeyCode
                             KeybindButton.Text = input.KeyCode.Name
@@ -1797,34 +1805,40 @@ function Wisper:CreateWindow(Config)
                 if not Enabled then
                     Tween(ModuleLabel, {TextTransparency = 0.3}, 0.1)
                 end
-                UpdateKeybindVisibility(true)
+                IsHoveringModule = true
+                UpdateKeybindVisibility()
             end)
 
             ModuleClickArea.MouseLeave:Connect(function()
                 if not Enabled then
                     Tween(ModuleLabel, {TextTransparency = Theme.TextDim}, 0.1)
                 end
-                UpdateKeybindVisibility(false)
+                IsHoveringModule = false
+                task.delay(0.05, UpdateKeybindVisibility)
             end)
             
             -- Keybind button hover
             KeybindButton.MouseEnter:Connect(function()
-                UpdateKeybindVisibility(true)
+                IsHoveringKeybind = true
+                UpdateKeybindVisibility()
             end)
             
             KeybindButton.MouseLeave:Connect(function()
-                UpdateKeybindVisibility(false)
+                IsHoveringKeybind = false
+                task.delay(0.05, UpdateKeybindVisibility)
             end)
 
             -- Settings button hover
             SettingsButton.MouseEnter:Connect(function()
                 Tween(SettingsButton, {ImageTransparency = 0.2}, 0.1)
-                UpdateKeybindVisibility(true)
+                IsHoveringSettings = true
+                UpdateKeybindVisibility()
             end)
 
             SettingsButton.MouseLeave:Connect(function()
                 Tween(SettingsButton, {ImageTransparency = Enabled and 0.3 or 0.5}, 0.1)
-                UpdateKeybindVisibility(false)
+                IsHoveringSettings = false
+                task.delay(0.05, UpdateKeybindVisibility)
             end)
 
             -- Left click: toggle module on/off
