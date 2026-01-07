@@ -627,13 +627,41 @@ function Wisper:CreateWindow(Config)
         local function ToggleSubMenuCollapse()
             SubMenuCollapsed = not SubMenuCollapsed
             if SubMenuCollapsed then
-                -- Collapse: hide modules, rotate arrow 180
+                -- Collapse: animate modules up and hide, rotate arrow 180
                 Tween(SubMenuArrowButton, {Rotation = 180}, 0.2)
-                ModulesContainer.Visible = false
+                -- Animate each module up
+                for _, child in ipairs(ModulesContainer:GetChildren()) do
+                    if child:IsA("Frame") then
+                        Tween(child, {Position = child.Position - UDim2.new(0, 0, 0, 15)}, 0.15)
+                    end
+                end
+                task.delay(0.15, function()
+                    if SubMenuCollapsed then
+                        ModulesContainer.Visible = false
+                        -- Reset positions
+                        for _, child in ipairs(ModulesContainer:GetChildren()) do
+                            if child:IsA("Frame") then
+                                child.Position = child.Position + UDim2.new(0, 0, 0, 15)
+                            end
+                        end
+                        UpdateThisShadow()
+                    end
+                end)
             else
-                -- Expand: show modules, rotate arrow back to 0
+                -- Expand: show modules, animate down, rotate arrow back to 0
                 Tween(SubMenuArrowButton, {Rotation = 0}, 0.2)
                 ModulesContainer.Visible = true
+                -- Animate each module appearing
+                for _, child in ipairs(ModulesContainer:GetChildren()) do
+                    if child:IsA("Frame") then
+                        local originalPos = child.Position
+                        child.Position = originalPos - UDim2.new(0, 0, 0, 15)
+                        Tween(child, {Position = originalPos}, 0.2)
+                    end
+                end
+                task.delay(0.05, function()
+                    UpdateThisShadow()
+                end)
             end
         end
 
@@ -881,15 +909,30 @@ function Wisper:CreateWindow(Config)
                 Expanded = not Expanded
                 if Expanded then
                     OptionsContainer.Visible = true
-                    OptionsContainer.BackgroundTransparency = 1
-                    Tween(OptionsContainer, {BackgroundTransparency = 0}, 0.2)
-                    Tween(SettingsButton, {Rotation = 90}, 0.2)
+                    -- Animate items appearing
+                    for _, child in ipairs(OptionsContainer:GetChildren()) do
+                        if child:IsA("Frame") then
+                            child.Position = child.Position - UDim2.new(0, 0, 0, 10)
+                            child.BackgroundTransparency = 1
+                            Tween(child, {Position = child.Position + UDim2.new(0, 0, 0, 10), BackgroundTransparency = 0}, 0.2)
+                        end
+                    end
                 else
-                    Tween(OptionsContainer, {BackgroundTransparency = 1}, 0.15)
-                    Tween(SettingsButton, {Rotation = 0}, 0.2)
+                    -- Animate items disappearing
+                    for _, child in ipairs(OptionsContainer:GetChildren()) do
+                        if child:IsA("Frame") then
+                            Tween(child, {Position = child.Position - UDim2.new(0, 0, 0, 10)}, 0.15)
+                        end
+                    end
                     task.delay(0.15, function()
                         if not Expanded then
                             OptionsContainer.Visible = false
+                            -- Reset positions
+                            for _, child in ipairs(OptionsContainer:GetChildren()) do
+                                if child:IsA("Frame") then
+                                    child.Position = child.Position + UDim2.new(0, 0, 0, 10)
+                                end
+                            end
                         end
                     end)
                 end
@@ -980,13 +1023,13 @@ function Wisper:CreateWindow(Config)
                     ZIndex = 7
                 })
 
-                -- Toggle switch background
+                -- Toggle switch background (positioned at end like slider value)
                 local ToggleSwitch = Create("Frame", {
                     Name = "Switch",
                     Parent = OptionFrame,
                     BackgroundColor3 = OptionEnabled and Theme.Accent or Theme.ModuleStroke,
-                    Position = UDim2.new(1, -36, 0.5, -7),
-                    Size = UDim2.new(0, 28, 0, 14),
+                    Position = UDim2.new(1, -32, 0.5, -7),
+                    Size = UDim2.new(0, 32, 0, 14),
                     ZIndex = 7
                 })
 
@@ -995,12 +1038,12 @@ function Wisper:CreateWindow(Config)
                     Parent = ToggleSwitch
                 })
 
-                -- Toggle circle (white ball)
+                -- Toggle circle (white ball) - positioned with more padding from edges
                 local ToggleCircle = Create("Frame", {
                     Name = "Circle",
                     Parent = ToggleSwitch,
                     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                    Position = OptionEnabled and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5),
+                    Position = OptionEnabled and UDim2.new(1, -14, 0.5, -5) or UDim2.new(0, 4, 0.5, -5),
                     Size = UDim2.new(0, 10, 0, 10),
                     ZIndex = 8
                 })
@@ -1023,11 +1066,11 @@ function Wisper:CreateWindow(Config)
                 local function UpdateOption()
                     if OptionEnabled then
                         Tween(ToggleSwitch, {BackgroundColor3 = Theme.Accent}, 0.15)
-                        Tween(ToggleCircle, {Position = UDim2.new(1, -12, 0.5, -5)}, 0.15)
+                        Tween(ToggleCircle, {Position = UDim2.new(1, -14, 0.5, -5)}, 0.15)
                         Tween(OptionLabel, {TextTransparency = 0.2}, 0.15)
                     else
                         Tween(ToggleSwitch, {BackgroundColor3 = Theme.ModuleStroke}, 0.15)
-                        Tween(ToggleCircle, {Position = UDim2.new(0, 2, 0.5, -5)}, 0.15)
+                        Tween(ToggleCircle, {Position = UDim2.new(0, 4, 0.5, -5)}, 0.15)
                         Tween(OptionLabel, {TextTransparency = 0.5}, 0.15)
                     end
                 end
