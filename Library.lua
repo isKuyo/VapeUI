@@ -1,4 +1,3 @@
-print("a")
 local mainapi = {
 	Categories = {},
 	GUIColor = {
@@ -5650,7 +5649,7 @@ local scarcitybanner = Instance.new('TextLabel')
 scarcitybanner.Size = UDim2.fromScale(1, 0.02)
 scarcitybanner.Position = UDim2.fromScale(0, 0.97)
 scarcitybanner.BackgroundTransparency = 1
-scarcitybanner.Text = 'A new discord has been created, click the discord icon to join.'
+scarcitybanner.Text = ''
 scarcitybanner.TextScaled = true
 scarcitybanner.TextColor3 = Color3.new(1, 1, 1)
 scarcitybanner.TextStrokeTransparency = 0.5
@@ -5777,61 +5776,17 @@ mainapi:CreateCategory({
 mainapi.Categories.Main:CreateDivider('misc')
 
 --[[
-	Friends
+	Friends (DISABLED)
 ]]
-local friends
+local friends = {
+	Update = Instance.new('BindableEvent'),
+	ColorUpdate = Instance.new('BindableEvent')
+}
 local friendscolor = {
 	Hue = 1,
 	Sat = 1,
 	Value = 1
 }
-local friendssettings = {
-	Name = 'Friends',
-	Icon = getcustomasset('newvape/assets/new/friendstab.png'),
-	Size = UDim2.fromOffset(17, 16),
-	Placeholder = 'Roblox username',
-	Color = Color3.fromRGB(5, 134, 105),
-	Function = function()
-		friends.Update:Fire()
-		friends.ColorUpdate:Fire(friendscolor.Hue, friendscolor.Sat, friendscolor.Value)
-	end
-}
-friends = mainapi:CreateCategoryList(friendssettings)
-friends.Update = Instance.new('BindableEvent')
-friends.ColorUpdate = Instance.new('BindableEvent')
-friends:CreateToggle({
-	Name = 'Recolor visuals',
-	Darker = true,
-	Default = true,
-	Function = function()
-		friends.Update:Fire()
-		friends.ColorUpdate:Fire(friendscolor.Hue, friendscolor.Sat, friendscolor.Value)
-	end
-})
-friendscolor = friends:CreateColorSlider({
-	Name = 'Friends color',
-	Darker = true,
-	Function = function(hue, sat, val)
-		for _, v in friends.Object.Children:GetChildren() do
-			local dot = v:FindFirstChild('Dot')
-			if dot and dot.BackgroundColor3 ~= color.Light(uipallet.Main, 0.37) then
-				dot.BackgroundColor3 = Color3.fromHSV(hue, sat, val)
-				dot.Dot.BackgroundColor3 = dot.BackgroundColor3
-			end
-		end
-		friendssettings.Color = Color3.fromHSV(hue, sat, val)
-		friends.ColorUpdate:Fire(hue, sat, val)
-	end
-})
-friends:CreateToggle({
-	Name = 'Use friends',
-	Darker = true,
-	Default = true,
-	Function = function()
-		friends.Update:Fire()
-		friends.ColorUpdate:Fire(friendscolor.Hue, friendscolor.Sat, friendscolor.Value)
-	end
-})
 mainapi:Clean(friends.Update)
 mainapi:Clean(friends.ColorUpdate)
 
@@ -5848,19 +5803,11 @@ mainapi:CreateCategoryList({
 })
 
 --[[
-	Targets
+	Targets (DISABLED)
 ]]
-local targets
-targets = mainapi:CreateCategoryList({
-	Name = 'Targets',
-	Icon = getcustomasset('newvape/assets/new/friendstab.png'),
-	Size = UDim2.fromOffset(17, 16),
-	Placeholder = 'Roblox username',
-	Function = function()
-		targets.Update:Fire()
-	end
-})
-targets.Update = Instance.new('BindableEvent')
+local targets = {
+	Update = Instance.new('BindableEvent')
+}
 mainapi:Clean(targets.Update)
 
 mainapi:CreateLegit()
@@ -6834,7 +6781,10 @@ function mainapi:UpdateGUI(hue, sat, val, default)
 
 	for i, v in mainapi.Categories do
 		if i == 'Main' then
-			v.Object.VapeLogo.V4Logo.ImageColor3 = Color3.fromHSV(hue, sat, val)
+			local vapeLogo = v.Object:FindFirstChild('VapeLogo')
+			if vapeLogo and vapeLogo:FindFirstChild('V4Logo') then
+				vapeLogo.V4Logo.ImageColor3 = Color3.fromHSV(hue, sat, val)
+			end
 			for _, button in v.Buttons do
 				if button.Enabled then
 					button.Object.TextColor3 = rainbow and Color3.fromHSV(mainapi:Color((hue - (button.Index * 0.025)) % 1)) or Color3.fromHSV(hue, sat, val)
