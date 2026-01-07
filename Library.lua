@@ -1,4 +1,3 @@
-print("a")
 local mainapi = {
 	Categories = {},
 	GUIColor = {
@@ -2561,9 +2560,7 @@ function mainapi:CreateGUI()
 	settingsversion.Size = UDim2.new(1, 0, 0, 16)
 	settingsversion.Position = UDim2.new(0, 0, 1, -16)
 	settingsversion.BackgroundTransparency = 1
-	settingsversion.Text = 'Vape '..mainapi.Version..' '..(
-		isfile('newvape/profiles/commit.txt') and readfile('newvape/profiles/commit.txt'):sub(1, 6) or ''
-	)..' '
+	settingsversion.Text = 'Vape '..mainapi.Version..' '
 	settingsversion.TextColor3 = color.Dark(uipallet.Text, 0.43)
 	settingsversion.TextXAlignment = Enum.TextXAlignment.Right
 	settingsversion.TextSize = 10
@@ -2820,23 +2817,40 @@ function mainapi:CreateGUI()
 		title.FontFace = uipallet.Font
 		title.Parent = window
 		local close = addCloseButton(window, 7)
-		local divider = Instance.new('Frame')
-		divider.Name = 'Divider'
-		divider.Size = UDim2.new(1, 0, 0, 1)
-		divider.Position = UDim2.fromOffset(0, 37)
-		divider.BackgroundColor3 = color.Light(uipallet.Main, 0.02)
-		divider.BorderSizePixel = 0
-		divider.Parent = window
-		local childrentoggle = Instance.new('Frame')
-		childrentoggle.Position = UDim2.fromOffset(0, 38)
-		childrentoggle.BackgroundTransparency = 1
-		childrentoggle.Parent = window
-		local windowlist = Instance.new('UIListLayout')
-		windowlist.SortOrder = Enum.SortOrder.LayoutOrder
-		windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
-		windowlist.Parent = childrentoggle
+		local back = Instance.new('ImageButton')
+		back.Name = 'Back'
+		back.Size = UDim2.fromOffset(16, 16)
+		back.Position = UDim2.fromOffset(11, 13)
+		back.BackgroundTransparency = 1
+		back.Image = getcustomasset('newvape/assets/new/back.png')
+		back.ImageColor3 = color.Light(uipallet.Main, 0.37)
+		back.Parent = window
+		local settingsversion = Instance.new('TextLabel')
+		settingsversion.Name = 'Version'
+		settingsversion.Size = UDim2.new(1, 0, 0, 16)
+		settingsversion.Position = UDim2.new(0, 0, 1, -16)
+		settingsversion.BackgroundTransparency = 1
+		settingsversion.Text = 'Vape '..mainapi.Version..' '
+		settingsversion.TextColor3 = color.Dark(uipallet.Text, 0.43)
+		settingsversion.TextXAlignment = Enum.TextXAlignment.Right
+		settingsversion.TextSize = 10
+		settingsversion.FontFace = uipallet.Font
+		settingsversion.Parent = window
+		addCorner(settingspane)
+		local settingschildren = Instance.new('Frame')
+		settingschildren.Name = 'Children'
+		settingschildren.Size = UDim2.new(1, 0, 1, -57)
+		settingschildren.Position = UDim2.fromOffset(0, 41)
+		settingschildren.BackgroundColor3 = uipallet.Main
+		settingschildren.BorderSizePixel = 0
+		settingschildren.Parent = settingspane
+		local settingswindowlist = Instance.new('UIListLayout')
+		settingswindowlist.SortOrder = Enum.SortOrder.LayoutOrder
+		settingswindowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		settingswindowlist.Parent = settingschildren
+		categoryapi.Object = window
 
-		function optionapi:CreateToggle(togglesettings)
+		function categoryapi:CreateToggle(togglesettings)
 			local toggleapi = {
 				Enabled = false,
 				Index = getTableSize(optionapi.Toggles)
@@ -3162,8 +3176,7 @@ function mainapi:CreateGUI()
 			knobframe.Size = UDim2.fromOffset(24, 4)
 			knobframe.Position = UDim2.fromScale(1, 0.5)
 			knobframe.AnchorPoint = Vector2.new(0.5, 0.5)
-			knobframe.BackgroundColor3 = color.Dark(uipallet.Main, 0.02)
-			knobframe.BorderSizePixel = 0
+			knobframe.BackgroundColor3 = color.Light(uipallet.Main, 0.14)
 			knobframe.Parent = fill
 			local knob = Instance.new('Frame')
 			knob.Name = 'Knob'
@@ -3791,7 +3804,7 @@ function mainapi:CreateCategory(categorysettings)
 		local dots = Instance.new('ImageLabel')
 		dots.Name = 'Dots'
 		dots.Size = UDim2.fromOffset(3, 16)
-		dots.Position = UDim2.fromOffset(4, 12)
+		dots.Position = UDim2.fromOffset(10, 12)
 		dots.BackgroundTransparency = 1
 		dots.Image = getcustomasset('newvape/assets/new/dots.png')
 		dots.ImageColor3 = color.Light(uipallet.Main, 0.37)
@@ -4507,40 +4520,6 @@ function mainapi:CreateCategoryList(categorysettings)
 				bindtext.TextSize = 12
 				bindtext.FontFace = uipallet.Font
 				bindtext.Parent = bind
-				bind.MouseEnter:Connect(function()
-					bindtext.Visible = false
-					bindicon.Visible = not bindtext.Visible
-					bindicon.Image = getcustomasset('newvape/assets/new/edit.png')
-					if v.Name ~= mainapi.Profile then
-						bindicon.ImageColor3 = color.Dark(uipallet.Text, 0.16)
-					end
-				end)
-				bind.MouseLeave:Connect(function()
-					bindtext.Visible = #v.Bind > 0
-					bindicon.Visible = not bindtext.Visible
-					bindicon.Image = getcustomasset('newvape/assets/new/bind.png')
-					if v.Name ~= mainapi.Profile then
-						bindicon.ImageColor3 = color.Dark(uipallet.Text, 0.43)
-					end
-				end)
-				local bindcover = Instance.new('ImageLabel')
-				bindcover.Name = 'Cover'
-				bindcover.Size = UDim2.fromOffset(154, 33)
-				bindcover.BackgroundTransparency = 1
-				bindcover.Visible = false
-				bindcover.Image = getcustomasset('newvape/assets/new/bindbkg.png')
-				bindcover.ScaleType = Enum.ScaleType.Slice
-				bindcover.SliceCenter = Rect.new(0, 0, 141, 40)
-				bindcover.Parent = object
-				local bindcovertext = Instance.new('TextLabel')
-				bindcovertext.Name = 'Text'
-				bindcovertext.Size = UDim2.new(1, -10, 1, -3)
-				bindcovertext.BackgroundTransparency = 1
-				bindcovertext.Text = 'PRESS A KEY TO BIND'
-				bindcovertext.TextColor3 = uipallet.Text
-				bindcovertext.TextSize = 11
-				bindcovertext.FontFace = uipallet.Font
-				bindcovertext.Parent = bindcover
 				bind.Parent = object
 				dotsbutton.MouseEnter:Connect(function()
 					if v.Name ~= mainapi.Profile then
@@ -5124,10 +5103,14 @@ function mainapi:CreateLegit()
 			if moduleapi.Children then
 				moduleapi.Children.Visible = moduleapi.Enabled
 			end
-			title.TextColor3 = moduleapi.Enabled and color.Light(uipallet.Text, 0.2) or color.Dark(uipallet.Text, 0.31)
+			title.TextColor3 = moduleapi.Enabled and Color3.fromHSV(mainapi.GUIColor.Hue, mainapi.GUIColor.Sat, mainapi.GUIColor.Value) or color.Dark(uipallet.Text, 0.31)
 			module.BackgroundColor3 = moduleapi.Enabled and color.Light(uipallet.Main, 0.05) or module.BackgroundColor3
 			tween:Tween(knob, uipallet.Tween, {
-				BackgroundColor3 = moduleapi.Enabled and Color3.fromHSV(mainapi.GUIColor.Hue, mainapi.GUIColor.Sat, mainapi.GUIColor.Value) or color.Light(uipallet.Main, 0.14)
+				BackgroundColor3 = moduleapi.Enabled and Color3.fromHSV(
+					mainapi.GUIColor.Hue,
+					mainapi.GUIColor.Sat,
+					mainapi.GUIColor.Value
+				) or (hovered and color.Light(uipallet.Main, 0.37) or color.Light(uipallet.Main, 0.14))
 			})
 			tween:Tween(knobmain, uipallet.Tween, {
 				Position = UDim2.fromOffset(moduleapi.Enabled and 12 or 2, 2)
@@ -5291,7 +5274,7 @@ function mainapi:CreateNotification(title, text, duration, type)
 		iconshadow.ZIndex = 5
 		iconshadow.BackgroundTransparency = 1
 		iconshadow.Image = getcustomasset('newvape/assets/new/'..(type or 'info')..'.png')
-		iconshadow.ImageColor3 = Color3.new()
+		iconshadow.ImageColor3 = Color3.new(1, 1, 1)
 		iconshadow.ImageTransparency = 0.5
 		iconshadow.Parent = notification
 		local icon = iconshadow:Clone()
@@ -5317,7 +5300,7 @@ function mainapi:CreateNotification(title, text, duration, type)
 		textshadow.Name = 'Text'
 		textshadow.Position = UDim2.fromOffset(47, 44)
 		textshadow.Text = removeTags(text)
-		textshadow.TextColor3 = Color3.new()
+		textshadow.TextColor3 = Color3.new(1, 1, 1)
 		textshadow.TextTransparency = 0.5
 		textshadow.RichText = false
 		textshadow.FontFace = uipallet.Font
@@ -5912,7 +5895,7 @@ general:CreateButton({
 		if shared.VapeDeveloper then
 			loadstring(readfile('newvape/loader.lua'), 'loader')()
 		else
-			loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/isKuyo/VapeUI/main/Library.lua', true))()
 		end
 	end,
 	Tooltip = 'This will set your profile to the default settings of Vape'
@@ -5931,7 +5914,7 @@ general:CreateButton({
 		if shared.VapeDeveloper then
 			loadstring(readfile('newvape/loader.lua'), 'loader')()
 		else
-			loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/isKuyo/VapeUI/main/Library.lua', true))()
 		end
 	end,
 	Tooltip = 'Reloads vape for debugging purposes'
@@ -6039,7 +6022,7 @@ guipane:CreateDropdown({
 			if shared.VapeDeveloper then
 				loadstring(readfile('newvape/loader.lua'), 'loader')()
 			else
-				loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+				loadstring(game:HttpGet('https://raw.githubusercontent.com/isKuyo/VapeUI/main/Library.lua', true))()
 			end
 		end
 	end,
