@@ -1,16 +1,43 @@
 local Wisper = {}
 
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
+-- Anti-detection: Cache services with obfuscated access
+local Services = setmetatable({}, {
+    __index = function(self, serviceName)
+        local service = game:GetService(serviceName)
+        rawset(self, serviceName, service)
+        return service
+    end
+})
+
+local TweenService = Services.TweenService
+local UserInputService = Services.UserInputService
+local RunService = Services.RunService
+local Players = Services.Players
+local CoreGui = (syn and syn.protect_gui) and Services.CoreGui or (gethui and gethui()) or Services.CoreGui
 
 local Player = Players.LocalPlayer
 
-if _G.WisperInstance then
-    _G.WisperInstance:Destroy()
-    _G.WisperInstance = nil
+-- Anti-detection: Use random key for instance storage
+local InstanceKey = tostring(math.random(100000000, 999999999))
+local OldInstance = rawget(_G, InstanceKey)
+if OldInstance and typeof(OldInstance) == "Instance" then
+    pcall(function() OldInstance:Destroy() end)
+    rawset(_G, InstanceKey, nil)
+end
+
+-- Anti-detection: Generate random names
+local function RandomString(length)
+    local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    local result = ""
+    for i = 1, length do
+        local idx = math.random(1, #chars)
+        result = result .. chars:sub(idx, idx)
+    end
+    return result
+end
+
+local function RandomName()
+    return RandomString(math.random(8, 16))
 end
 
 local Theme = {
@@ -29,12 +56,37 @@ local Theme = {
     ToggleDisabled = Color3.fromRGB(60, 60, 60)
 }
 
-local function Create(ClassName, Properties)
-    local Instance_ = Instance.new(ClassName)
-    for Property, Value in pairs(Properties) do
-        Instance_[Property] = Value
+-- Anti-detection: Protected instance creation
+local ProtectedCreate = (function()
+    local create = Instance.new
+    local cloneFrom = {}
+    
+    return function(ClassName, Properties)
+        local success, Instance_ = pcall(function()
+            return create(ClassName)
+        end)
+        
+        if not success then
+            return nil
+        end
+        
+        -- Randomize Name if not explicitly set
+        if not Properties.Name then
+            Properties.Name = RandomName()
+        end
+        
+        for Property, Value in pairs(Properties) do
+            pcall(function()
+                Instance_[Property] = Value
+            end)
+        end
+        
+        return Instance_
     end
-    return Instance_
+end)()
+
+local function Create(ClassName, Properties)
+    return ProtectedCreate(ClassName, Properties)
 end
 
 local function Tween(Object, Properties, Duration, EasingStyle, EasingDirection)
@@ -84,7 +136,8 @@ local function MakeDraggable(Frame, DragFrame)
     end)
 end
 
-local ScreenGuiName = "Wisper_" .. tostring(math.random(100000, 999999))
+-- Anti-detection: Completely random ScreenGui name
+local ScreenGuiName = RandomName()
 
 local Icons = {
 	["lucide-accessibility"] = "rbxassetid://10709751939",
@@ -926,19 +979,31 @@ function Wisper:CreateWindow(Config)
 
     local ScreenGui = Create("ScreenGui", {
         Name = ScreenGuiName,
-        Parent = CoreGui,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
         ResetOnSpawn = false,
         DisplayOrder = 10
     })
+    
+    -- Anti-detection: Use protected GUI methods if available
+    if syn and syn.protect_gui then
+        syn.protect_gui(ScreenGui)
+        ScreenGui.Parent = CoreGui
+    elseif gethui then
+        ScreenGui.Parent = gethui()
+    elseif KRNL_LOADED and getgenv().protect_gui then
+        getgenv().protect_gui(ScreenGui)
+        ScreenGui.Parent = CoreGui
+    else
+        ScreenGui.Parent = CoreGui
+    end
 
-    _G.WisperInstance = ScreenGui
+    -- Anti-detection: Store with random key instead of obvious name
+    rawset(_G, InstanceKey, ScreenGui)
 
     local FRAME_WIDTH = 260
 
     -- Drop Shadow for MainFrame (separate frame in ScreenGui)
     local MainDropShadow = Create("ImageLabel", {
-        Name = "MainDropShadow",
         Parent = ScreenGui,
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
@@ -955,7 +1020,6 @@ function Wisper:CreateWindow(Config)
 
     -- Main Frame Container (for layout)
     local MainFrame = Create("Frame", {
-        Name = "MainFrame",
         Parent = ScreenGui,
         BackgroundColor3 = Theme.Background,
         BorderSizePixel = 0,
@@ -995,7 +1059,6 @@ function Wisper:CreateWindow(Config)
 
     -- Header (dark bar at top)
     local Header = Create("Frame", {
-        Name = "Header",
         Parent = MainFrame,
         BackgroundColor3 = Theme.Header,
         BorderSizePixel = 0,
@@ -1012,7 +1075,6 @@ function Wisper:CreateWindow(Config)
 
     -- Cover bottom corners of header (so only top is rounded)
     local HeaderBottomCover = Create("Frame", {
-        Name = "HeaderBottomCover",
         Parent = Header,
         BackgroundColor3 = Theme.Header,
         BorderSizePixel = 0,
@@ -1023,7 +1085,6 @@ function Wisper:CreateWindow(Config)
 
     -- Title Label in Header (accent color)
     local TitleLabel = Create("TextLabel", {
-        Name = "TitleLabel",
         Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0, 0),
@@ -1038,7 +1099,6 @@ function Wisper:CreateWindow(Config)
 
     -- Game Name Label (next to title, uses real game name)
     local GameNameLabel = Create("TextLabel", {
-        Name = "GameNameLabel",
         Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 65, 0, 0),
@@ -1055,7 +1115,6 @@ function Wisper:CreateWindow(Config)
 
     -- Search Icon (top right in header)
     local SearchIcon = Create("ImageLabel", {
-        Name = "SearchIcon",
         Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(1, -28, 0.5, -10),
@@ -1070,7 +1129,6 @@ function Wisper:CreateWindow(Config)
 
     -- Header bottom line (inside header)
     local HeaderLine = Create("Frame", {
-        Name = "HeaderLine",
         Parent = Header,
         BackgroundColor3 = Theme.Line,
         BorderSizePixel = 0,
@@ -1081,7 +1139,6 @@ function Wisper:CreateWindow(Config)
 
     -- Categories Container (between header and footer)
     local CategoriesContainer = Create("Frame", {
-        Name = "CategoriesContainer",
         Parent = MainFrame,
         BackgroundTransparency = 1,
         Size = UDim2.new(1, 0, 0, 0),
@@ -1106,7 +1163,6 @@ function Wisper:CreateWindow(Config)
 
     -- Footer (dark bar at bottom with placeholder text)
     local Footer = Create("Frame", {
-        Name = "Footer",
         Parent = MainFrame,
         BackgroundColor3 = Theme.Header,
         BorderSizePixel = 0,
@@ -1123,7 +1179,6 @@ function Wisper:CreateWindow(Config)
 
     -- Cover top corners of footer (so only bottom is rounded)
     local FooterTopCover = Create("Frame", {
-        Name = "FooterTopCover",
         Parent = Footer,
         BackgroundColor3 = Theme.Header,
         BorderSizePixel = 0,
@@ -1134,7 +1189,6 @@ function Wisper:CreateWindow(Config)
 
     -- Footer top line
     local FooterLine = Create("Frame", {
-        Name = "FooterLine",
         Parent = Footer,
         BackgroundColor3 = Theme.Line,
         BorderSizePixel = 0,
@@ -1145,7 +1199,6 @@ function Wisper:CreateWindow(Config)
 
     -- Footer placeholder text
     local FooterText = Create("TextLabel", {
-        Name = "FooterText",
         Parent = Footer,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 0),
@@ -1215,7 +1268,6 @@ function Wisper:CreateWindow(Config)
 
         -- Category Button with gradient background
         local CategoryButton = Create("Frame", {
-            Name = "CategoryButton_" .. CategoryConfig.Name,
             Parent = CategoriesContainer,
             BackgroundColor3 = Color3.fromRGB(255, 255, 255),
             BorderSizePixel = 0,
@@ -1248,7 +1300,6 @@ function Wisper:CreateWindow(Config)
         end
         
         local CategoryIcon = Create("ImageLabel", {
-            Name = "Icon",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 12, 0.5, -8),
@@ -1261,7 +1312,6 @@ function Wisper:CreateWindow(Config)
 
         -- Category Label
         local CategoryLabel = Create("TextLabel", {
-            Name = "Label",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 36, 0, 0),
@@ -1277,7 +1327,6 @@ function Wisper:CreateWindow(Config)
 
         -- Arrow/Link Icon (right side)
         local ArrowIcon = Create("ImageLabel", {
-            Name = "Arrow",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
             Position = UDim2.new(1, -24, 0.5, -6),
@@ -1291,7 +1340,6 @@ function Wisper:CreateWindow(Config)
         })
 
         local ClickButton = Create("TextButton", {
-            Name = "ClickArea",
             Parent = CategoryButton,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 1, 0),
@@ -1304,7 +1352,6 @@ function Wisper:CreateWindow(Config)
 
         -- Create individual SubMenuFrame for this category
         local SubDropShadow = Create("ImageLabel", {
-            Name = "SubDropShadow_" .. CategoryConfig.Name,
             Parent = ScreenGui,
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
@@ -1321,7 +1368,6 @@ function Wisper:CreateWindow(Config)
         })
 
         local SubMenuFrame = Create("Frame", {
-            Name = "SubMenuFrame_" .. CategoryConfig.Name,
             Parent = ScreenGui,
             BackgroundColor3 = Theme.Background,
             BorderSizePixel = 0,
@@ -1349,7 +1395,6 @@ function Wisper:CreateWindow(Config)
 
         -- SubMenu Header with category name and icon
         local SubMenuHeader = Create("Frame", {
-            Name = "SubMenuHeader",
             Parent = SubMenuFrame,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 36),
@@ -1365,7 +1410,6 @@ function Wisper:CreateWindow(Config)
 
         -- Category icon in header (uses same iconImage from above)
         local SubMenuIcon = Create("ImageLabel", {
-            Name = "Icon",
             Parent = SubMenuHeader,
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 0, 0.5, -8),
@@ -1377,7 +1421,6 @@ function Wisper:CreateWindow(Config)
 
         -- Category name in header
         local SubMenuTitle = Create("TextLabel", {
-            Name = "Title",
             Parent = SubMenuHeader,
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 24, 0, 0),
@@ -1392,7 +1435,6 @@ function Wisper:CreateWindow(Config)
 
         -- Collapse arrow button in header
         local SubMenuArrowButton = Create("ImageButton", {
-            Name = "ArrowButton",
             Parent = SubMenuHeader,
             BackgroundTransparency = 1,
             Position = UDim2.new(1, -12, 0.5, -6),
@@ -1408,7 +1450,6 @@ function Wisper:CreateWindow(Config)
 
         -- Click area for header title (to collapse/expand)
         local SubMenuHeaderClickArea = Create("TextButton", {
-            Name = "HeaderClickArea",
             Parent = SubMenuHeader,
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 0, 0, 0),
@@ -1433,7 +1474,6 @@ function Wisper:CreateWindow(Config)
 
         -- Modules container for this category (below header)
         local ModulesContainer = Create("Frame", {
-            Name = "ModulesContainer_" .. CategoryConfig.Name,
             Parent = SubMenuFrame,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 0),
@@ -1585,7 +1625,6 @@ function Wisper:CreateWindow(Config)
 
             -- Main module frame (header + expandable content)
             local ModuleFrame = Create("Frame", {
-                Name = "Module_" .. ModuleConfig.Name,
                 Parent = ModulesContainer,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 28),
@@ -1603,7 +1642,6 @@ function Wisper:CreateWindow(Config)
 
             -- Module header (the clickable row)
             local ModuleHeader = Create("Frame", {
-                Name = "Header",
                 Parent = ModuleFrame,
                 BackgroundColor3 = Enabled and Theme.Accent or Color3.fromRGB(255, 255, 255),
                 Size = UDim2.new(1, 0, 0, 28),
@@ -1629,7 +1667,6 @@ function Wisper:CreateWindow(Config)
             ModuleHeaderGradient.Enabled = not Enabled
 
             local ModuleLabel = Create("TextLabel", {
-                Name = "Label",
                 Parent = ModuleHeader,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 10, 0, 0),
@@ -1648,7 +1685,6 @@ function Wisper:CreateWindow(Config)
             local IsListeningForKeybind = false
             
             local KeybindButton = Create("TextButton", {
-                Name = "KeybindButton",
                 Parent = ModuleHeader,
                 BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                 BackgroundTransparency = Enabled and 0.8 or 0.95,
@@ -1671,7 +1707,6 @@ function Wisper:CreateWindow(Config)
 
             -- Settings icon button on the right
             local SettingsButton = Create("ImageButton", {
-                Name = "SettingsButton",
                 Parent = ModuleHeader,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(1, -28, 0.5, -8),
@@ -1685,7 +1720,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local ModuleClickArea = Create("TextButton", {
-                Name = "ClickArea",
                 Parent = ModuleHeader,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 0, 0, 0),
@@ -1697,7 +1731,6 @@ function Wisper:CreateWindow(Config)
 
             -- Expandable options container (hidden by default)
             local OptionsContainer = Create("Frame", {
-                Name = "Options",
                 Parent = ModuleFrame,
                 BackgroundColor3 = Theme.CategoryBgBottom,
                 Size = UDim2.new(1, 0, 0, 0),
@@ -1888,7 +1921,6 @@ function Wisper:CreateWindow(Config)
                 local OptionEnabled = ToggleConfig.Default
 
                 local OptionFrame = Create("Frame", {
-                    Name = "Option_" .. ToggleConfig.Name,
                     Parent = OptionsContainer,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 0, 24),
@@ -1897,7 +1929,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local OptionLabel = Create("TextLabel", {
-                    Name = "Label",
                     Parent = OptionFrame,
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0, 0, 0, 0),
@@ -1913,7 +1944,6 @@ function Wisper:CreateWindow(Config)
 
                 -- Toggle switch background (positioned at end like slider value)
                 local ToggleSwitch = Create("Frame", {
-                    Name = "Switch",
                     Parent = OptionFrame,
                     BackgroundColor3 = OptionEnabled and Theme.Accent or Theme.ModuleStroke,
                     Position = UDim2.new(1, -32, 0.5, -7),
@@ -1928,7 +1958,6 @@ function Wisper:CreateWindow(Config)
 
                 -- Toggle circle (white ball) - positioned with more padding from edges
                 local ToggleCircle = Create("Frame", {
-                    Name = "Circle",
                     Parent = ToggleSwitch,
                     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                     Position = OptionEnabled and UDim2.new(1, -14, 0.5, -5) or UDim2.new(0, 4, 0.5, -5),
@@ -1942,7 +1971,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local OptionClickArea = Create("TextButton", {
-                    Name = "ClickArea",
                     Parent = OptionFrame,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 1, 0),
@@ -1996,7 +2024,6 @@ function Wisper:CreateWindow(Config)
                 local SliderValue = SliderConfig.Default
 
                 local SliderFrame = Create("Frame", {
-                    Name = "Slider_" .. SliderConfig.Name,
                     Parent = OptionsContainer,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 0, 32),
@@ -2005,7 +2032,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local SliderLabel = Create("TextLabel", {
-                    Name = "Label",
                     Parent = SliderFrame,
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0, 0, 0, 0),
@@ -2020,7 +2046,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local SliderValueLabel = Create("TextLabel", {
-                    Name = "Value",
                     Parent = SliderFrame,
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0.6, 0, 0, 0),
@@ -2034,7 +2059,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local SliderBar = Create("Frame", {
-                    Name = "Bar",
                     Parent = SliderFrame,
                     BackgroundColor3 = Theme.ModuleStroke,
                     Position = UDim2.new(0, 0, 0, 20),
@@ -2048,7 +2072,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local SliderFill = Create("Frame", {
-                    Name = "Fill",
                     Parent = SliderBar,
                     BackgroundColor3 = Theme.Accent,
                     Size = UDim2.new((SliderValue - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min), 0, 1, 0),
@@ -2063,7 +2086,6 @@ function Wisper:CreateWindow(Config)
                 -- White circle knob
                 local initialPercent = (SliderValue - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min)
                 local SliderKnob = Create("Frame", {
-                    Name = "Knob",
                     Parent = SliderBar,
                     BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                     Position = UDim2.new(initialPercent, -6, 0.5, -6),
@@ -2077,7 +2099,6 @@ function Wisper:CreateWindow(Config)
                 })
 
                 local SliderClickArea = Create("TextButton", {
-                    Name = "ClickArea",
                     Parent = SliderBar,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 1, 16),
@@ -2150,7 +2171,6 @@ function Wisper:CreateWindow(Config)
             ButtonConfig.Callback = ButtonConfig.Callback or function() end
 
             local ButtonFrame = Create("Frame", {
-                Name = "Button_" .. ButtonConfig.Name,
                 Parent = ModulesContainer,
                 BackgroundColor3 = Theme.ModuleBackground,
                 Size = UDim2.new(1, 0, 0, 36),
@@ -2169,7 +2189,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local ButtonLabel = Create("TextLabel", {
-                Name = "Label",
                 Parent = ButtonFrame,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 10, 0, 0),
@@ -2182,7 +2201,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local ButtonClickArea = Create("TextButton", {
-                Name = "ClickArea",
                 Parent = ButtonFrame,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0),
@@ -2216,7 +2234,6 @@ function Wisper:CreateWindow(Config)
             local Value = SliderConfig.Default
 
             local SliderFrame = Create("Frame", {
-                Name = "Slider_" .. SliderConfig.Name,
                 Parent = ModulesContainer,
                 BackgroundColor3 = Theme.ModuleBackground,
                 Size = UDim2.new(1, 0, 0, 50),
@@ -2235,7 +2252,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local SliderLabel = Create("TextLabel", {
-                Name = "Label",
                 Parent = SliderFrame,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 10, 0, 5),
@@ -2248,7 +2264,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local SliderValueLabel = Create("TextLabel", {
-                Name = "Value",
                 Parent = SliderFrame,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(1, -50, 0, 5),
@@ -2261,7 +2276,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local SliderBar = Create("Frame", {
-                Name = "Bar",
                 Parent = SliderFrame,
                 BackgroundColor3 = Theme.ToggleDisabled,
                 Position = UDim2.new(0, 10, 0, 30),
@@ -2274,7 +2288,6 @@ function Wisper:CreateWindow(Config)
             })
 
             local SliderFill = Create("Frame", {
-                Name = "Fill",
                 Parent = SliderBar,
                 BackgroundColor3 = Theme.Accent,
                 Size = UDim2.new((Value - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min), 0, 1, 0)
@@ -2343,8 +2356,8 @@ function Wisper:CreateWindow(Config)
     end
 
     function Window:Destroy()
-        ScreenGui:Destroy()
-        _G.WisperInstance = nil
+        pcall(function() ScreenGui:Destroy() end)
+        rawset(_G, InstanceKey, nil)
     end
 
     return Window
